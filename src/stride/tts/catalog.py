@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
+from stride.intent.parser import MAX_REPS
 from stride.workout import phrases as ph
 from stride.workout.phrases import Phrase
 
@@ -19,6 +20,7 @@ MAX_WHOLE_STATUS_S = 300
 
 def whole_phrases(marks: Iterable[int]) -> set[Phrase]:
     out: set[Phrase] = {ph.DIDNT_CATCH, ph.NO_TIMER, ph.STOPPED, ph.GO}
+    out |= {ph.READY, ph.SAY_GO, ph.NO_WORKOUT, ph.NO_SPLITS, ph.WORKOUT_ENDED}
     out |= {ph.cue(m) for m in marks}
     out |= {ph.resting(s) for s in range(15, MAX_WHOLE_REST_S + 1, 15)}
     out |= {ph.added(s) for s in COMMON_ADDS}
@@ -35,13 +37,24 @@ def fragments() -> set[str]:
         out |= {str(s), *ph.duration(s)}
     for m in range(1, 61):
         out |= set(ph.duration(m * 60))
+    # M2: rep counts, split times, summaries
+    out |= {ph.WORKOUT_DONE, "Average", "Fastest", "Slowest", "Faded", "Even pace"}
+    out |= {"Finished faster by", "rest", "Say go when ready", *ph.GO}
+    for k in range(1, MAX_REPS + 1):
+        out |= {ph.rep(k), f"of {k}"}
+    out |= {f"point {d}" for d in range(10)} | {f"oh {d}" for d in range(10)}
+    out.add("0")  # sub-second splits (a tap right after Go)
     return out
 
 
 def resolve(parts: Phrase, have: Callable[[str], bool]) -> list[str]:
-    """Clip texts to play for ``parts``: the whole phrase if cached, else its fragments."""
+    """Clip texts to play for ``parts``: the whole phrase if cached, else its fragments if they're
+    all cached, else the whole phrase (one ~1 s render, cached for next time, rather than several
+    fragment renders). That last case is things like a plan's "8 by 300"."""
     whole = " ".join(parts)
-    return [whole] if len(parts) == 1 or have(whole) else list(parts)
+    if len(parts) == 1 or have(whole) or not all(have(p) for p in parts):
+        return [whole]
+    return list(parts)
 
 
 def texts(phrases: Iterable[Phrase]) -> set[str]:

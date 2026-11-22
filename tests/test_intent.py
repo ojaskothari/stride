@@ -123,3 +123,86 @@ def test_intent_equality_ignores_text() -> None:
 def test_parse_never_raises_on_junk() -> None:
     for junk in ["!!!", "1:", ":30", "and a half", "half", "a", "minute", "seconds", "9" * 40]:
         parse(junk)
+
+
+# --- M2: workouts -----------------------------------------------------------------------------
+
+P = IntentKind.PLAN
+
+
+@pytest.mark.parametrize(
+    ("text", "reps", "meters", "rest"),
+    [
+        ("8 by 300, 90 rest", 8, 300, 90),
+        ("8 by 300 90 rest", 8, 300, 90),
+        ("8x300, 90 seconds rest", 8, 300, 90),
+        ("8 x 300m with 90 seconds rest", 8, 300, 90),
+        ("eight by three hundred, ninety rest", 8, 300, 90),
+        ("6 by 400 with 2 minute rest", 6, 400, 120),
+        ("6 by 400, rest 2 minutes", 6, 400, 120),
+        ("6 by 400, 3 rest", 6, 400, 180),
+        ("10 by 200 meters, 1:30 rest", 10, 200, 90),
+        ("4 by 1 mile, 3 minutes", 4, 1609, 180),
+        ("5 by 1k, 2 minutes recovery", 5, 1000, 120),
+        ("12 by 100", 12, 100, None),
+        ("ten by one hundred", 10, 100, None),
+        ("Coach, 8 times 300, a minute thirty rest.", 8, 300, 90),
+        # Whisper merges "three hundred, ninety rest" into one number (seen live).
+        ("8 by 390 rest.", 8, 300, 90),
+        ("4 by 1290 rest", 4, 1200, 90),
+        ("6 by 403 rest", 6, 400, 180),
+        ("8 by 330", 8, 330, None),  # no rest word: an odd distance is taken at face value
+        ("8 by 345 rest", 8, 300, 45),
+    ],
+)
+def test_parse_plan(text: str, reps: int, meters: int, rest: int | None) -> None:
+    got = parse(text)
+    assert (got.kind, got.reps, got.distance_m, got.seconds) == (P, reps, meters, rest), text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "8 by 2",  # no unit and too short to be meters
+        "100 by 300",  # too many reps
+        "rest 90",  # not a plan
+    ],
+)
+def test_not_a_plan(text: str) -> None:
+    assert parse(text).kind is not P
+
+
+@pytest.mark.parametrize(
+    ("text", "kind"),
+    [
+        ("go", IntentKind.GO),
+        ("Go.", IntentKind.GO),
+        ("let's go", IntentKind.GO),
+        ("start the workout", IntentKind.GO),
+        ("start workout", IntentKind.GO),
+        ("done", IntentKind.DONE),
+        ("Done.", IntentKind.DONE),
+        ("I'm done", IntentKind.DONE),
+        ("rep done", IntentKind.DONE),
+        ("finished", IntentKind.DONE),
+        ("summary", IntentKind.SUMMARY),
+        ("how did I do", IntentKind.SUMMARY),
+        ("read my splits", IntentKind.SUMMARY),
+        ("what rep am I on", IntentKind.REP_STATUS),
+        ("What's rep am I on?", IntentKind.REP_STATUS),  # live transcript
+        ("how many reps left", IntentKind.REP_STATUS),
+        ("rep count", IntentKind.REP_STATUS),
+        ("end workout", IntentKind.END_WORKOUT),
+        ("end the workout", IntentKind.END_WORKOUT),
+        ("finish workout", IntentKind.END_WORKOUT),
+        ("stop the workout", IntentKind.END_WORKOUT),
+        ("workout over", IntentKind.END_WORKOUT),
+        # M1 commands keep their meaning
+        ("stop", IntentKind.STOP),
+        ("skip", IntentKind.STOP),
+        ("how much time left", IntentKind.STATUS),
+        ("start my rest", IntentKind.START_REST),
+    ],
+)
+def test_parse_workout_commands(text: str, kind: IntentKind) -> None:
+    assert parse(text).kind is kind, text
