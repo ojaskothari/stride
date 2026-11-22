@@ -6,15 +6,16 @@ results, tick the timer. STT runs on a worker thread so a 300 ms decode never de
 
 from __future__ import annotations
 
-import sys
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
+
 from stride import __version__
-from stride.audio.vad import MicPermissionError, Utterance, check_signal
+from stride.audio.vad import SILENCE_DB, Audio, MicPermissionError, Utterance, check_signal
 from stride.config import Config
 from stride.log import SessionLog
 from stride.session import Session
@@ -22,6 +23,11 @@ from stride.stt import Transcript
 from stride.workout import Speech
 
 TICK_S = 0.01
+MIC_WAIT_S = 5.0
+SILENT_HINT = (
+    "  (the mic sent pure silence: check System Settings > Privacy & Security > Microphone,"
+    " or reconnect your earbuds)"
+)
 
 
 def _progress(done: int, total: int) -> None:
@@ -64,17 +70,17 @@ def run(cfg: Config, env: str | None) -> int:
 
     mic = Mic()
     mic.start()
+    # Bluetooth mics (AirPods) can send silence for seconds while they switch into headset mode,
+    # sometimes after a brief blip of signal. So silence here is a warning, not a fatal error;
+    # a tap that captures pure silence repeats the hint (see _show).
+    warmup: list[Audio] = []
+    deadline = time.monotonic() + MIC_WAIT_S
+    while time.monotonic() < deadline and not (warmup and np.any(warmup[-1])):
+        warmup += [f for f, _ in mic.read(0.05)]
     try:
-        warmup = [f for f, _ in mic.read(1.0)]
-        deadline = time.monotonic() + 0.6
-        while time.monotonic() < deadline:
-            warmup += [f for f, _ in mic.read(0.05)]
         check_signal(warmup)
     except MicPermissionError as e:
-        mic.close()
-        player.close()
-        print(f"stride: {e}", file=sys.stderr)
-        return 3
+        print(f"  warning: {e} (Bluetooth mics can take a few seconds; carrying on)")
 
     log = SessionLog(Path(cfg.log.dir), env, cfg.log.save_audio, datetime.now())
     session = Session(cfg, player, log, lead_s=player.output_latency)
@@ -153,4 +159,6 @@ def _show(session: Session, u: Utterance, t: Transcript | None) -> None:
     stt_ms = f" · stt {t.seconds * 1000:.0f} ms" if t else ""
     hang = f" · wait {u.hangover_s * 1000:.0f} ms" if u.hangover_s is not None else ""
     print(f"  you: {said} → {h.intent.kind.value}{slot}{stt_ms}{hang}", flush=True)
+    if u.floor_db <= SILENCE_DB:
+        print(SILENT_HINT, flush=True)
     print(f"  stride: {h.reply.text}", flush=True)
