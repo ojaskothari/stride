@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Any
 
 ENHANCERS = ("none", "rnnoise", "deepfilternet")
-TTS_BACKENDS = ("say", "pyttsx3", "none")
+# Cues are pre-rendered clips played in-process; the backend only renders them.
+# "none" stays silent (tests, headless runs). See docs/decisions.md.
+TTS_BACKENDS = ("say", "none")
 
 
 class ConfigError(ValueError):
@@ -22,6 +24,7 @@ class ConfigError(ValueError):
 @dataclass(frozen=True)
 class RestConfig:
     default_seconds: int = 90
+    default_add_seconds: int = 30
 
 
 @dataclass(frozen=True)
@@ -49,12 +52,13 @@ class AudioConfig:
     sample_rate: int = 16_000
     vad_db_above_floor: float = 10.0
     silence_end_ms: int = 600
-    max_utterance_s: float = 6.0
+    max_utterance_s: float = 4.0
 
 
 @dataclass(frozen=True)
 class TtsConfig:
     backend: str = "say"
+    voice: str = ""  # a `say -v` voice name; empty uses the system voice
 
 
 @dataclass(frozen=True)
@@ -149,8 +153,8 @@ def _coerce(value: Any, default: Any, where: str) -> Any:
 
 
 def _validate(cfg: Config) -> None:
-    if cfg.rest.default_seconds <= 0:
-        raise ConfigError("rest.default_seconds must be positive")
+    if cfg.rest.default_seconds <= 0 or cfg.rest.default_add_seconds <= 0:
+        raise ConfigError("rest.default_seconds and rest.default_add_seconds must be positive")
 
     marks = cfg.cues.marks
     if any(m <= 0 for m in marks):

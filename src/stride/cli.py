@@ -29,12 +29,28 @@ def _cmd_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_run(args: argparse.Namespace) -> int:
+    cfg = load_config(_resolve_config_path(args.config))
+    try:
+        from stride.run import run
+    except ImportError as e:
+        print(f"stride: {e}. Install the audio extra: pip install -e '.[audio]'", file=sys.stderr)
+        return 2
+    return run(cfg, args.env)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="stride", description=__doc__)
     parser.add_argument("--version", action="version", version=f"stride {__version__}")
     parser.add_argument("--config", help="path to config.toml (default: ./config.toml if present)")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("config", help="print the resolved configuration").set_defaults(func=_cmd_config)
+    p_run = sub.add_parser("run", help="start the voice timer (tap any key to talk)")
+    p_run.add_argument(
+        "--env",
+        help="tag the conditions for later scoring: quiet, post_rep, wind, crowd, gym, ...",
+    )
+    p_run.set_defaults(func=_cmd_run)
     return parser
 
 

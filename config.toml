@@ -3,6 +3,7 @@
 
 [rest]
 default_seconds = 90            # "start my rest" with no duration and no plan
+default_add_seconds = 30        # "add time" with no duration
 
 [cues]
 marks = [120, 60, 30, 10, 5, 4, 3, 2, 1]   # seconds remaining when a cue is spoken
@@ -22,10 +23,11 @@ backend = "none"                # none | rnnoise | deepfilternet (chosen by the 
 sample_rate = 16000
 vad_db_above_floor = 10.0       # speech gate, relative to the calibrated noise floor
 silence_end_ms = 600            # trailing silence that ends an utterance
-max_utterance_s = 6.0
+max_utterance_s = 4.0
 
 [tts]
-backend = "say"                 # say | pyttsx3 | none
+backend = "say"                 # say (renders cached cue clips) | none (silent)
+voice = ""                      # `say -v ?` lists voices; empty = system voice
 
 [log]
 dir = "logs"

@@ -13,7 +13,10 @@ authors = [{ name = "Ojas Kothari" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+# numpy is in dev so CI type-checks and tests the array code (VAD, buffers) without audio hardware.
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "numpy>=1.26"]
+# Live audio + on-device STT. Kept optional so core logic and CI stay lightweight.
+audio = ["faster-whisper>=1.0", "sounddevice>=0.4.7", "numpy>=1.26"]
 
 [project.scripts]
 stride = "stride.cli:main"
@@ -37,3 +40,8 @@ select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "PT"]
 python_version = "3.11"
 strict = true
 files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+# No type stubs; also not installed in CI (the [audio] extra is local-only).
+module = ["sounddevice", "faster_whisper", "faster_whisper.*"]
+ignore_missing_imports = true
