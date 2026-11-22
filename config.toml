@@ -1,0 +1,32 @@
+# stride configuration. Every value here is also the built-in default (a test enforces that),
+# so you only need to keep the keys you change. Unknown keys are an error.
+
+[rest]
+default_seconds = 90            # "start my rest" with no duration and no plan
+
+[cues]
+marks = [120, 60, 30, 10, 5, 4, 3, 2, 1]   # seconds remaining when a cue is spoken
+
+[cues.min_rest]                 # a mark is only spoken if the rest is at least this long
+120 = 180                       # "2 minutes left" only for rests of 3:00 or more
+
+[stt]
+model = "base.en"               # provisional: the M4 noise study picks the shipped default
+compute_type = "int8"
+vocab_prompt = true             # pass the command vocabulary as Whisper's initial prompt
+
+[enhance]
+backend = "none"                # none | rnnoise | deepfilternet (chosen by the noise study)
+
+[audio]
+sample_rate = 16000
+vad_db_above_floor = 10.0       # speech gate, relative to the calibrated noise floor
+silence_end_ms = 600            # trailing silence that ends an utterance
+max_utterance_s = 6.0
+
+[tts]
+backend = "say"                 # say | pyttsx3 | none
+
+[log]
+dir = "logs"
+save_audio = false              # raw audio is only saved when evaluation recording is on
