@@ -1,0 +1,460 @@
+{
+ "version": 1,
+ "phrases": [
+  {
+   "id": "r01",
+   "group": "core",
+   "display": "start my rest",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "r02",
+   "group": "core",
+   "display": "rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r03",
+   "group": "core",
+   "display": "start my 3 minute rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r04",
+   "group": "core",
+   "display": "rest 90",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "r05",
+   "group": "core",
+   "display": "rest for 2 minutes",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "r06",
+   "group": "core",
+   "display": "rest a minute thirty",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r07",
+   "group": "core",
+   "display": "set a timer for 45 seconds",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r08",
+   "group": "core",
+   "display": "start a 4 minute rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r09",
+   "group": "core",
+   "display": "rest two and a half minutes",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "r10",
+   "group": "core",
+   "display": "rest 1:30",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "a01",
+   "group": "core",
+   "display": "add 30 seconds",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "a02",
+   "group": "core",
+   "display": "add a minute",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "a03",
+   "group": "core",
+   "display": "another minute",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "a04",
+   "group": "core",
+   "display": "add time",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "a05",
+   "group": "core",
+   "display": "extend by 2 minutes",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "a06",
+   "group": "core",
+   "display": "add 15 seconds",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "a07",
+   "group": "core",
+   "display": "add 10",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "s01",
+   "group": "core",
+   "display": "how much time left",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "s02",
+   "group": "core",
+   "display": "time check",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "s03",
+   "group": "core",
+   "display": "how long do I have",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "s04",
+   "group": "core",
+   "display": "time left",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "x01",
+   "group": "core",
+   "display": "stop",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "x02",
+   "group": "core",
+   "display": "skip",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "x03",
+   "group": "core",
+   "display": "cancel the timer",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "x04",
+   "group": "core",
+   "display": "I'm ready",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "p01",
+   "group": "core",
+   "display": "8 by 300, 90 rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "p02",
+   "group": "core",
+   "display": "6 by 200 with 2 minutes rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "p03",
+   "group": "core",
+   "display": "4 by 400, 3 minute rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "p04",
+   "group": "core",
+   "display": "10 by 100, 60 rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "p05",
+   "group": "core",
+   "display": "12 by 200, 45 seconds rest",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "g01",
+   "group": "core",
+   "display": "go",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "g02",
+   "group": "core",
+   "display": "let's go",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "g03",
+   "group": "core",
+   "display": "start the workout",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "d01",
+   "group": "core",
+   "display": "done",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "d02",
+   "group": "core",
+   "display": "done with the rep",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "d03",
+   "group": "core",
+   "display": "finished",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "m01",
+   "group": "core",
+   "display": "summary",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "m02",
+   "group": "core",
+   "display": "how did I do",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "m03",
+   "group": "core",
+   "display": "give me my splits",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "q01",
+   "group": "core",
+   "display": "what rep am I on",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "q02",
+   "group": "core",
+   "display": "how many reps left",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "e01",
+   "group": "core",
+   "display": "end workout",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "e02",
+   "group": "core",
+   "display": "I'm done with the workout",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "n01",
+   "group": "core",
+   "display": "that one hurt",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "n02",
+   "group": "core",
+   "display": "my legs are dead",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "n03",
+   "group": "core",
+   "display": "nice run",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h01",
+   "group": "heldout",
+   "display": "give me another minute",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "h02",
+   "group": "heldout",
+   "display": "one more minute please",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h03",
+   "group": "heldout",
+   "display": "wrap it up",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h04",
+   "group": "heldout",
+   "display": "start the next one",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h05",
+   "group": "heldout",
+   "display": "I'm done for today",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h06",
+   "group": "heldout",
+   "display": "how am I looking on time",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h07",
+   "group": "heldout",
+   "display": "put me on a two minute break",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h08",
+   "group": "heldout",
+   "display": "finished that one",
+   "own_words": false,
+   "post_rep": true
+  },
+  {
+   "id": "h09",
+   "group": "heldout",
+   "display": "where am I at in the workout",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h10",
+   "group": "heldout",
+   "display": "kill the timer",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h11",
+   "group": "heldout",
+   "display": "how were my times",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "h12",
+   "group": "heldout",
+   "display": "ninety seconds",
+   "own_words": false,
+   "post_rep": false
+  },
+  {
+   "id": "o01",
+   "group": "own_words",
+   "display": "In your own words: You just finished a rep. Tell stride.",
+   "own_words": true,
+   "post_rep": true
+  },
+  {
+   "id": "o02",
+   "group": "own_words",
+   "display": "In your own words: Ask for 2 more minutes of rest.",
+   "own_words": true,
+   "post_rep": false
+  },
+  {
+   "id": "o03",
+   "group": "own_words",
+   "display": "In your own words: Ask how much rest is left.",
+   "own_words": true,
+   "post_rep": true
+  },
+  {
+   "id": "o04",
+   "group": "own_words",
+   "display": "In your own words: Start a 90-second rest.",
+   "own_words": true,
+   "post_rep": false
+  },
+  {
+   "id": "o05",
+   "group": "own_words",
+   "display": "In your own words: End the whole workout.",
+   "own_words": true,
+   "post_rep": false
+  },
+  {
+   "id": "o06",
+   "group": "own_words",
+   "display": "In your own words: Ask which rep you're on.",
+   "own_words": true,
+   "post_rep": false
+  },
+  {
+   "id": "o07",
+   "group": "own_words",
+   "display": "In your own words: Ask how your reps went.",
+   "own_words": true,
+   "post_rep": false
+  }
+ ]
+}

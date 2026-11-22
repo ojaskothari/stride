@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>stride recording</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --bg: #000000; --ink: #ffffff; --muted: #8e8e93; --dim: #5a5a5e; --line: #2c2c2e; }
+  * { box-sizing: border-box; border-radius: 0; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  /* One lowercase voice for the whole page; what people type stays as typed. */
+  body { text-transform: lowercase; }
+  input { text-transform: none; }
+  select, option { text-transform: lowercase; }
+  main { max-width: 480px; margin: 0 auto; padding: 0 20px 72px; }
+  header { display: flex; justify-content: space-between; align-items: baseline;
+    padding: 22px 0 14px; border-bottom: 1px solid var(--line); margin-bottom: 44px; }
+  .brand { font-size: 15px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+  .step { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  h1, .phrase, .lead { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .lead { font-size: 22px; line-height: 1.36; font-weight: 500; letter-spacing: -.012em; margin: 0 0 28px; }
+  .aside { font-size: 14px; line-height: 1.5; color: var(--muted); margin: 0 0 44px; }
+  .aside strong { color: var(--ink); font-weight: 500; }
+  h1 { font-size: 34px; line-height: 1.1; font-weight: 600; letter-spacing: -.02em; margin: 0 0 10px; }
+  .sub { color: var(--muted); font-size: 16px; margin: 0 0 36px; }
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+  input[type=text], select { width: 100%; height: 48px; font: inherit; padding: 0 14px; appearance: none; -webkit-appearance: none;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); outline: none; }
+  select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+      linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+  input[type=text]:focus, select:focus { border-color: var(--ink); }
+  input::placeholder { color: var(--dim); }
+  .miccheck { display: flex; align-items: center; gap: 16px; margin: 28px 0 0; }
+  .miccheck button { flex: none; height: 40px; padding: 0 16px; font-size: 14px; }
+  .meter { flex: 1; height: 2px; background: var(--line); }
+  .meter > div { height: 100%; width: 0; background: var(--ink); transition: width .08s linear; }
+  .check { display: flex; gap: 12px; align-items: flex-start; margin-top: 36px; }
+  .check input { appearance: none; -webkit-appearance: none; flex: none; width: 18px; height: 18px; margin: 2px 0 0;
+    border: 1px solid var(--muted); background: var(--bg); cursor: pointer; }
+  .check input:checked { background: var(--ink); border-color: var(--ink); box-shadow: inset 0 0 0 3px var(--bg); }
+  .check label { margin: 0; font-size: 14px; color: var(--ink); line-height: 1.45; }
+  button { font: inherit; font-size: 16px; height: 52px; padding: 0 20px; cursor: pointer; text-transform: lowercase;
+    border: 1px solid var(--ink); background: var(--bg); color: var(--ink); }
+  button.primary { background: var(--ink); color: var(--bg); font-weight: 500; }
+  button:disabled, button.primary:disabled { background: var(--bg); color: var(--dim); border-color: var(--line); cursor: default; }
+  button:not(:disabled):hover { opacity: .8; }
+  .row { display: flex; gap: 10px; margin-top: 16px; }
+  .row > * { flex: 1; }
+  .go { margin-top: 28px; }
+  .bar { position: relative; height: 1px; margin: -45px 0 108px; }
+  .bar > div { height: 100%; background: var(--ink); transition: width .3s; }
+  .say { color: var(--muted); font-size: 13px; margin: 0; }
+  .phrase { font-size: 38px; font-weight: 600; line-height: 1.1; letter-spacing: -.022em; margin: 12px 0 56px; min-height: 2.2em; }
+  .phrase.own { font-size: 26px; line-height: 1.25; letter-spacing: -.015em; }
+  .recbtn { display: block; width: 100%; height: 64px; font-size: 18px; font-weight: 500;
+    background: var(--ink); color: var(--bg); }
+  .recbtn.on { background: var(--bg); color: var(--ink); }
+  .postrep .recbtn { height: 96px; font-size: 22px; }
+  .rectime { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 1.4em; font-variant-numeric: tabular-nums; }
+  #typed { margin-top: 24px; }
+  .msg { min-height: 1.5em; margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .msg.warn { color: var(--ink); }
+  .hint { color: var(--dim); font-size: 13px; line-height: 1.5; margin-top: 16px; }
+  .status { font-size: 13px; color: var(--muted); margin-top: 32px; font-variant-numeric: tabular-nums; }
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 40px 0 24px; }
+  .say.own { color: var(--ink); font-size: 15px; font-weight: 600; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: flex; align-items: center;
+    justify-content: center; padding: 20px; z-index: 10; }
+  .sheet { width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; background: var(--bg);
+    border: 1px solid var(--ink); padding: 28px 24px 24px; }
+  .sheet h2 { font-size: 22px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 20px; }
+  .rule-item { display: flex; gap: 12px; align-items: flex-start; padding: 16px 0; border-top: 1px solid var(--line); }
+  .rule-item input { appearance: none; -webkit-appearance: none; flex: none; width: 18px; height: 18px; margin: 2px 0 0;
+    border: 1px solid var(--muted); background: var(--bg); cursor: pointer; }
+  .rule-item input:checked { background: var(--ink); border-color: var(--ink); box-shadow: inset 0 0 0 3px var(--bg); }
+  .rule-item label { margin: 0; font-size: 15px; color: var(--ink); line-height: 1.5; cursor: pointer; }
+  .rule-item strong { display: block; color: var(--ink); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  :root { --red: #ff453a; }
+  .danger { border-color: var(--red); color: var(--red); background: var(--bg); }
+  button.danger.fill { background: var(--red); color: #fff; }
+  .restart { margin-top: 56px; }
+  .restart button { height: 40px; font-size: 14px; padding: 0 16px; }
+  .sheet p { font-size: 15px; color: var(--muted); line-height: 1.5; margin: 0 0 8px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main id="app">
+  <header><p class="brand">stride</p><span class="step" id="count"></span></header>
+
+  <!-- 1. setup -->
+  <section id="setup">
+    <p class="lead">stride is a hands-free, voice-controlled workout timer i'm building. to test and
+      train it, i'm collecting recordings of friends saying a few short phrases. it should take you
+      about 4 minutes max!</p>
+
+    <p class="aside" id="quietbox"><strong>please try to find a quiet place to record :)</strong><br>
+      try to have no music or people talking in the background.</p>
+
+    <div class="field">
+    <label for="code">your code (it's in the link i sent you)</label>
+    <input id="code" type="text" autocomplete="off" autocapitalize="characters" placeholder="S04">
+    </div>
+
+    <div class="field">
+    <label for="devtype">what are you recording with?</label>
+    <select id="devtype">
+      <option value="">Pick one</option>
+      <option value="airpods">AirPods (any kind)</option>
+      <option value="earbuds_bt">Other Bluetooth earbuds or headphones</option>
+      <option value="earbuds_wired">Wired earbuds or headphones</option>
+      <option value="laptop">Laptop mic</option>
+      <option value="phone">Phone mic</option>
+      <option value="other">Something else</option>
+    </select>
+    </div>
+
+    <div class="field">
+    <label for="mic">which mic?</label>
+    <select id="mic"><option value="">tap "test my mic" first</option></select>
+    </div>
+
+    <div id="exertionbox" class="hidden">
+      <label for="exertion">How did you get out of breath?</label>
+      <select id="exertion">
+        <option value="">Pick one</option>
+        <option value="track_rep">A hard rep on the track</option>
+        <option value="gym_set">A hard set at the gym</option>
+        <option value="home_effort">Hard effort at home (burpees, stairs)</option>
+        <option value="other">Something else</option>
+      </select>
+    </div>
+
+    <div class="miccheck"><button id="testmic">test my mic</button><div class="meter"><div id="level"></div></div></div>
+    <div class="msg" id="setupmsg"></div>
+
+    <div class="check">
+      <input type="checkbox" id="consent">
+      <label for="consent">I'm okay with my recordings being used to test stride. They won't be
+        shared or linked to my name.</label>
+    </div>
+
+    <div class="row go"><button id="start" class="primary" disabled>let's go</button></div>
+    <p class="hint" id="setuphint">Tap Record, say the phrase, tap Stop. Your progress saves if you
+      close the page.</p>
+  </section>
+
+  <!-- 2. recording -->
+  <section id="record" class="hidden">
+    <span id="mode" class="hidden"></span>
+    <div class="bar"><div id="barfill"></div></div>
+
+    <div id="repbreak" class="hidden">
+      <p class="say">Next</p>
+      <p class="phrase">Go run your rep.</p>
+      <p class="say">Come back while you're still breathing hard.</p>
+      <div class="row"><button id="backfromrep" class="primary">I'm back</button></div>
+    </div>
+
+    <div id="prompt">
+      <p class="say" id="saylabel">Say</p>
+      <p class="phrase" id="phrase"></p>
+      <button id="rec" class="recbtn">Record</button>
+      <div class="rectime" id="rectime"></div>
+      <div id="typed" class="hidden">
+        <label for="typedtext">What did you say? (type it out)</label>
+        <input id="typedtext" type="text" autocomplete="off">
+      </div>
+      <div class="msg" id="clipmsg"></div>
+      <div class="row">
+        <button id="play" disabled>Play it back</button>
+        <button id="next" class="primary" disabled>Next</button>
+      </div>
+    </div>
+    <div class="status" id="uploadstatus"></div>
+    <div class="restart"><button class="danger" data-restart>restart</button></div>
+  </section>
+
+  <!-- before starting: instructions everyone must accept -->
+  <div class="modal hidden" id="rules" role="dialog" aria-modal="true" aria-labelledby="rulestitle">
+    <div class="sheet">
+      <h2 id="rulestitle">quick heads up before you start</h2>
+      <div class="rule-item">
+        <input type="checkbox" id="rule1" class="rulebox">
+        <label for="rule1">some prompts are in quotes, so just read those out loud. others describe a
+          situation instead, like when you've just finished a rep, and for those you say whatever
+          you'd naturally say.</label>
+      </div>
+      <div class="rule-item">
+        <input type="checkbox" id="rule2" class="rulebox">
+        <label for="rule2">talk the way you normally would. if you're wearing airpods or earbuds, you
+          don't have to do anything special, and if you're on your phone or laptop, hold it how you
+          usually do instead of talking right into the mic.</label>
+      </div>
+      <div class="rule-item">
+        <input type="checkbox" id="rule3" class="rulebox">
+        <label for="rule3">if you mess one up, you can play it back and redo it before moving on.</label>
+      </div>
+      <div class="row"><button id="rulesok" class="primary" disabled>sounds good</button></div>
+    </div>
+  </div>
+
+  <!-- confirm restart -->
+  <div class="modal hidden" id="confirmrestart" role="dialog" aria-modal="true" aria-labelledby="restarttitle">
+    <div class="sheet">
+      <h2 id="restarttitle">start over?</h2>
+      <p>this deletes every recording you've made so far and takes you back to the beginning. you can't
+        undo it.</p>
+      <div class="row">
+        <button id="restartcancel">never mind</button>
+        <button id="restartyes" class="danger fill">yes, restart</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. done -->
+  <section id="done" class="hidden">
+    <h1>Thank you!</h1>
+    <p id="donemsg" class="sub"></p>
+    <div class="row"><button id="download" class="primary">Download my recordings</button></div>
+    <p class="hint" id="downloadhint">Then send me the file. Text, AirDrop or email works.</p>
+    <hr class="rule">
+    <p class="say">got another minute?</p>
+    <div class="row"><button id="more">record 10 more</button></div>
+    <div class="restart"><button class="danger" data-restart>restart</button></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+"use strict";
+const params = new URLSearchParams(location.search);
+// ---- configuration --------------------------------------------------------------------------
+// Upload address of the Google Apps Script (docs/record/upload.gs). Empty = download-only.
+const UPLOAD_URL = "";
+const POST_REP_PER_BREAK = 4;          // prompts between "run your rep" screens in post-rep mode
+// Each speaker records a short set: a few prompts everyone says (to compare speakers on identical
+// words) plus a rotating slice of the rest, so that across speakers every prompt is covered evenly.
+const SHARED = { calm: ["r01", "d01", "s01", "a01", "x01", "o01"], post_rep: ["d01", "r01"] };
+const ROTATING = { calm: { core: 9, heldout: 3, own_words: 2 }, post_rep: { any: 6 } };
+const EXTRA = 10;                      // "do 10 more"
+const ROOM_SECONDS = 3, NOISY_ROOM_DBFS = -50;  // room check during setup (warning only)
+const FULL_SET = params.get("set") === "all";
+// Quality gates (on the raw recording, before any processing)
+const MIN_SECONDS = 0.4, MAX_SECONDS = 15, CLIP_PEAK = 0.99, QUIET_DBFS = -45;
+
+// Post-rep recording is built but switched off for now (quiet-room recordings first).
+const POST_REP_ENABLED = false;
+const MODE = POST_REP_ENABLED && params.get("mode") === "post_rep" ? "post_rep" : "calm";
+const $ = (id) => document.getElementById(id);
+
+// ---- tiny IndexedDB store (progress survives closing the tab) --------------------------------
+const db = new Promise((resolve, reject) => {
+  const req = indexedDB.open("stride-recording", 1);
+  req.onupgradeneeded = () => {
+    req.result.createObjectStore("clips");
+    req.result.createObjectStore("state");
+  };
+  req.onsuccess = () => resolve(req.result);
+  req.onerror = () => reject(req.error);
+});
+async function dbOp(store, mode, fn) {
+  const d = await db;
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(store, mode);
+    const r = fn(tx.objectStore(store));
+    tx.oncomplete = () => resolve(r && r.result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+const put = (store, key, val) => dbOp(store, "readwrite", (s) => s.put(val, key));
+const get = (store, key) => dbOp(store, "readonly", (s) => s.get(key));
+const allClips = () => dbOp("clips", "readonly", (s) => s.getAll());
+
+// ---- audio --------------------------------------------------------------------------------
+let ctx = null, stream = null, source = null, worklet = null, analyser = null;
+let chunks = [], recording = false, recStart = 0;
+
+const WORKLET = `
+class Tap extends AudioWorkletProcessor {
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch) this.port.postMessage(ch.slice(0));
+    return true;
+  }
+}
+registerProcessor("tap", Tap);`;
+
+async function openMic(deviceId) {
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  // The browser's own echo cancellation / noise suppression / gain control would contaminate a
+  // study about noise, so all three are off: we want what the microphone itself delivers.
+  stream = await navigator.mediaDevices.getUserMedia({ audio: {
+    deviceId: deviceId ? { exact: deviceId } : undefined,
+    channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+  }});
+  if (!ctx) {
+    ctx = new AudioContext();
+    const url = URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" }));
+    await ctx.audioWorklet.addModule(url);
+  }
+  if (ctx.state === "suspended") await ctx.resume();
+  if (source) source.disconnect();
+  source = ctx.createMediaStreamSource(stream);
+  analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
+  worklet = new AudioWorkletNode(ctx, "tap");
+  worklet.port.onmessage = (e) => { if (recording) chunks.push(e.data); };
+  source.connect(analyser); source.connect(worklet);
+  // Worklets only run when connected to the graph's output; route through a muted gain.
+  const mute = ctx.createGain(); mute.gain.value = 0; worklet.connect(mute).connect(ctx.destination);
+  await listMics();
+  const settings = stream.getAudioTracks()[0].getSettings();
+  return settings;
+}
+
+async function listMics() {
+  const sel = $("mic"), current = stream && stream.getAudioTracks()[0].getSettings().deviceId;
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
+  sel.innerHTML = "";
+  devs.forEach((d, i) => {
+    const o = document.createElement("option");
+    o.value = d.deviceId; o.textContent = d.label || `Microphone ${i + 1}`;
+    if (d.deviceId === current) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function levelLoop() {
+  if (!analyser) return;
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  let s = 0; for (const v of buf) s += v * v;
+  const db = 10 * Math.log10(s / buf.length + 1e-12);
+  $("level").style.width = `${Math.max(0, Math.min(100, (db + 70) * 1.6))}%`;
+  requestAnimationFrame(levelLoop);
+}
+
+function concat(parts) {
+  const n = parts.reduce((a, p) => a + p.length, 0), out = new Float32Array(n);
+  let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+
+function wav(samples, rate) {  // 16-bit PCM mono
+  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+  str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); str(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const x = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+  }
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+function quality(samples, rate) {
+  const seconds = samples.length / rate;
+  let peak = 0, s = 0;
+  for (const x of samples) { const a = Math.abs(x); if (a > peak) peak = a; s += x * x; }
+  // Loudest 100 ms window: a fair "how loud was the speech" even with silence around it.
+  const win = Math.max(1, Math.round(rate * 0.1));
+  let best = 0, acc = 0;
+  for (let i = 0; i < samples.length; i++) {
+    acc += samples[i] * samples[i];
+    if (i >= win) acc -= samples[i - win] * samples[i - win];
+    if (acc > best) best = acc;
+  }
+  const speechDbfs = 10 * Math.log10(best / win + 1e-12);
+  const problems = [];
+  if (seconds < MIN_SECONDS) problems.push("too short");
+  if (peak >= CLIP_PEAK) problems.push("too loud (distorted)");
+  if (speechDbfs < QUIET_DBFS) problems.push("too quiet or no speech heard");
+  return { seconds: +seconds.toFixed(3), peak: +peak.toFixed(4), speech_dbfs: +speechDbfs.toFixed(1), problems };
+}
+
+// ---- session ------------------------------------------------------------------------------
+let phrases = [], order = [], idx = 0, code = "", current = null, phraseVersion = 0;
+const sessionId = MODE === "post_rep"
+  ? `postrep-${new Date().toISOString().slice(0, 10)}` : "calm";
+
+function seededShuffle(arr, seedStr) {  // same speaker code -> same order, different per speaker
+  let h = 2166136261;
+  for (const c of seedStr) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const rand = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1e9) / 1e9; };
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+// Speaker k takes the k-th slice of each pool (pools shuffled once with a fixed seed, so the
+// slices mix commands). Consecutive speaker codes therefore cover every prompt evenly.
+function slice(pool, k, n) {
+  if (!pool.length) return [];
+  const s = seededShuffle(pool, "stride-pool-v1"), start = (k * n) % s.length;
+  return Array.from({ length: Math.min(n, s.length) }, (_, i) => s[(start + i) % s.length]);
+}
+function assign(all, k) {
+  if (FULL_SET) return all;
+  const byId = Object.fromEntries(all.map((p) => [p.id, p]));
+  const shared = SHARED[MODE].map((id) => byId[id]).filter(Boolean);
+  const rest = all.filter((p) => !SHARED[MODE].includes(p.id));
+  const picked = Object.entries(ROTATING[MODE]).flatMap(([group, n]) =>
+    slice(group === "any" ? rest : rest.filter((p) => p.group === group), k, n));
+  return [...shared, ...picked];
+}
+const speakerIndex = () => parseInt(code.slice(1), 10);
+let roomDbfs = null;
+
+const stateKey = () => `${code}|${MODE}|${sessionId}`;
+const clipName = (p) => `${code}_${sessionId}_${p.id}`;
+
+async function loadPhrases() {
+  const r = await fetch("phrases.json", { cache: "no-cache" });
+  const data = await r.json();
+  phraseVersion = data.version;
+  phrases = data.phrases.filter((p) => MODE === "calm" || p.post_rep);
+}
+
+function show(id) {
+  for (const s of ["setup", "record", "done"]) $(s).classList.toggle("hidden", s !== id);
+  if (id !== "record") $("count").textContent = "";
+}
+
+function render() {
+  if (idx >= order.length) return finish();
+  const p = order[idx];
+  $("count").textContent = `${idx + 1} / ${order.length}`;
+  $("mode").textContent = MODE === "post_rep" ? "post-rep" : "";
+  $("barfill").style.width = `${(idx / order.length) * 100}%`;
+  const atBreak = MODE === "post_rep" && idx % POST_REP_PER_BREAK === 0 && !render.backFromRep;
+  $("repbreak").classList.toggle("hidden", !atBreak);
+  $("prompt").classList.toggle("hidden", atBreak);
+  render.backFromRep = false;
+  $("saylabel").textContent = p.own_words ? "don't read this, say it your own way" : "say";
+  $("saylabel").classList.toggle("own", p.own_words);
+  $("phrase").textContent = p.own_words ? p.display.replace(/^In your own words: /, "") : `“${p.display}”`;
+  $("phrase").classList.toggle("own", p.own_words);
+  $("typed").classList.toggle("hidden", !p.own_words);
+  $("typedtext").value = "";
+  $("clipmsg").textContent = ""; $("clipmsg").className = "msg";
+  $("play").disabled = true; $("next").disabled = true;
+  $("rec").textContent = "Record"; $("rectime").textContent = "";
+  current = null;
+}
+
+async function toggleRecord() {
+  if (!recording) {
+    chunks = []; recording = true; recStart = performance.now();
+    $("rec").classList.add("on"); $("rec").textContent = "Stop";
+    const tick = () => {
+      if (!recording) return;
+      const t = (performance.now() - recStart) / 1000;
+      $("rectime").textContent = `Recording  0:${String(Math.floor(t)).padStart(2, "0")}`;
+      requestAnimationFrame(tick);
+    };
+    tick();
+    $("play").disabled = true; $("next").disabled = true; $("clipmsg").textContent = "";
+    return;
+  }
+  recording = false;
+  $("rec").classList.remove("on"); $("rec").textContent = "Record again";
+  $("rectime").textContent = "";
+  const samples = concat(chunks), rate = ctx.sampleRate, q = quality(samples, rate);
+  current = { samples, rate, q, blob: wav(samples, rate) };
+  $("play").disabled = false;
+  const m = $("clipmsg");
+  if (q.problems.length) {
+    const why = { "too short": "That got cut off.", "too loud (distorted)": "That was a bit too loud.",
+      "too quiet or no speech heard": "I couldn't really hear that." }[q.problems[0]];
+    m.textContent = `${why} Try once more?`; m.className = "msg warn";
+    $("next").disabled = q.problems.includes("too short");  // allow keeping a quiet clip if they insist
+  } else {
+    m.textContent = "Got it."; m.className = "msg"; $("next").disabled = false;
+  }
+}
+
+function play() {
+  if (!current) return;
+  const a = new Audio(URL.createObjectURL(current.blob)); a.play();
+}
+
+async function next() {
+  const p = order[idx];
+  if (p.own_words && !$("typedtext").value.trim()) {
+    $("clipmsg").textContent = "Type out what you said first."; $("clipmsg").className = "msg warn"; return;
+  }
+  const track = stream.getAudioTracks()[0];
+  const meta = {
+    name: clipName(p), speaker: code, phrase_id: p.id, phrase_version: phraseVersion,
+    group: p.group, delivery: MODE, session: sessionId,
+    exertion: MODE === "post_rep" ? $("exertion").value : null,
+    room_dbfs: roomDbfs, assigned_set: FULL_SET ? "all" : "rotation-v1",
+    typed_text: p.own_words ? $("typedtext").value.trim() : null,
+    device_type: $("devtype").value, device_label: track.label,
+    sample_rate: current.rate, ...current.q, kept_with_problems: current.q.problems.length > 0,
+    recorded_at: new Date().toISOString(), user_agent: navigator.userAgent,
+    browser_processing: (({ echoCancellation, noiseSuppression, autoGainControl }) =>
+      ({ echoCancellation, noiseSuppression, autoGainControl }))(track.getSettings()),
+  };
+  await put("clips", meta.name, { meta, wav: current.blob, uploaded: false });
+  idx += 1;
+  await put("state", stateKey(), { idx, order: order.map((x) => x.id) });
+  uploadPending();
+  render();
+}
+
+async function finish() {
+  show("done");
+  const n = (await allClips()).filter((c) => c.meta.speaker === code).length;
+  $("donemsg").textContent = `You recorded ${n} phrases.`;
+  $("more").classList.toggle("hidden", order.length >= phrases.length);
+  updateUploadStatus();
+}
+
+// ---- upload (optional, background, retried) -------------------------------------------------
+let uploading = false, generation = 0;
+function b64(blob) {
+  return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(blob); });
+}
+async function uploadPending() {
+  if (!UPLOAD_URL || uploading) return;
+  uploading = true;
+  const gen = generation;
+  try {
+    for (const c of await allClips()) {
+      if (gen !== generation) break;
+      if (c.uploaded || c.meta.speaker !== code) continue;
+      // text/plain avoids a CORS preflight, which Apps Script doesn't answer.
+      const r = await fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({
+        code, name: c.meta.name, meta: c.meta, wav: await b64(c.wav) }) });
+      const out = await r.json();
+      if (!out.ok) throw new Error(out.error || "upload refused");
+      c.uploaded = true; await put("clips", c.meta.name, c);
+      updateUploadStatus();
+    }
+  } catch (e) {
+    $("uploadstatus").textContent = "Sending paused. It'll retry on its own, nothing is lost.";
+    setTimeout(() => { uploading = false; uploadPending(); }, 15000);
+    return;
+  }
+  uploading = false;
+  updateUploadStatus();
+}
+async function updateUploadStatus() {
+  const mine = (await allClips()).filter((c) => c.meta.speaker === code);
+  const up = mine.filter((c) => c.uploaded).length;
+  const text = UPLOAD_URL ? `${up} of ${mine.length} sent` : "";
+  $("uploadstatus").textContent = text;
+  if (!$("done").classList.contains("hidden")) {
+    const all = UPLOAD_URL && up === mine.length;
+    $("donemsg").textContent = all ? `All ${up} recordings are sent. You can close this page.`
+      : `You recorded ${mine.length} phrases.` + (UPLOAD_URL ? ` ${up} sent so far.` : "");
+    $("downloadhint").textContent = all ? "You don't need to download anything." : "Then send me the file. Text, AirDrop or email works.";
+  }
+}
+
+async function download() {
+  const zip = new JSZip(), mine = (await allClips()).filter((c) => c.meta.speaker === code);
+  for (const c of mine) {
+    zip.file(`${c.meta.name}.wav`, c.wav);
+    zip.file(`${c.meta.name}.json`, JSON.stringify(c.meta, null, 1));
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `stride_${code}_${MODE}.zip`; a.click();
+}
+
+// ---- wiring -------------------------------------------------------------------------------
+function validSetup() {
+  code = $("code").value.trim().toUpperCase();
+  return /^S\d{2,3}$/.test(code) && $("devtype").value
+    && (MODE !== "post_rep" || $("exertion").value) && $("consent").checked && stream
+    && roomDbfs !== null;
+}
+function refreshStart() { $("start").disabled = !validSetup(); }
+
+$("testmic").onclick = async () => {
+  try {
+    const s = await openMic($("mic").value || undefined);
+    const off = ["echoCancellation", "noiseSuppression", "autoGainControl"].filter((k) => s[k]);
+    $("setupmsg").textContent = off.length
+      ? "Your browser is changing the audio. Chrome or Firefox works better."
+      : "Your mic works.";
+    $("setupmsg").className = off.length ? "msg warn" : "msg ok";
+    levelLoop();
+    if (!off.length) await roomCheck();
+  } catch (e) {
+    $("setupmsg").textContent = "I couldn't get to your mic. Allow microphone access and try again.";
+    $("setupmsg").className = "msg warn";
+  }
+  refreshStart();
+};
+$("mic").onchange = () => $("testmic").onclick();
+
+async function roomCheck() {
+  // Average background level over a few seconds of silence. Saved with every clip so noisy
+  // recordings can be found later; the warning just asks people to move somewhere quieter.
+  const m = $("setupmsg");
+  m.textContent = `Stay silent for ${ROOM_SECONDS} seconds…`; m.className = "msg";
+  $("testmic").disabled = true;
+  const buf = new Float32Array(analyser.fftSize);
+  let sum = 0, n = 0;
+  const end = performance.now() + ROOM_SECONDS * 1000;
+  await new Promise((resolve) => {
+    const tick = () => {
+      analyser.getFloatTimeDomainData(buf);
+      for (const v of buf) sum += v * v;
+      n += buf.length;
+      if (performance.now() < end) setTimeout(tick, 50); else resolve();
+    };
+    tick();
+  });
+  roomDbfs = +(10 * Math.log10(sum / n + 1e-12)).toFixed(1);
+  $("testmic").disabled = false;
+  const noisy = MODE === "calm" && roomDbfs > NOISY_ROOM_DBFS;
+  m.textContent = noisy
+    ? "It's a bit loud here. Somewhere quieter would help, but you can keep going."
+    : "Mic works, room is quiet. You're good.";
+  m.className = noisy ? "msg warn" : "msg";
+  refreshStart();
+}
+for (const id of ["code", "devtype", "exertion", "consent"]) $(id).addEventListener("input", refreshStart);
+
+$("start").onclick = () => {
+  if (!validSetup()) return;
+  document.querySelectorAll(".rulebox").forEach((b) => { b.checked = false; });
+  $("rulesok").disabled = true;
+  $("rules").classList.remove("hidden");
+};
+document.querySelectorAll(".rulebox").forEach((b) => b.addEventListener("change", () => {
+  $("rulesok").disabled = ![...document.querySelectorAll(".rulebox")].every((x) => x.checked);
+}));
+$("rulesok").onclick = async () => {
+  $("rules").classList.add("hidden");
+  await begin();
+};
+async function begin() {
+  await loadPhrases();
+  const saved = await get("state", stateKey());
+  const byId = Object.fromEntries(phrases.map((p) => [p.id, p]));
+  if (saved && saved.order.every((id) => byId[id])) {
+    order = saved.order.map((id) => byId[id]); idx = saved.idx;
+  } else {
+    order = seededShuffle(assign(phrases, speakerIndex()), `${code}|${MODE}`); idx = 0;
+  }
+  show("record"); render(); uploadPending();
+}
+$("backfromrep").onclick = () => { render.backFromRep = true; render(); };
+$("rec").onclick = toggleRecord;
+$("play").onclick = play;
+$("next").onclick = next;
+$("download").onclick = download;
+
+// ---- restart: delete this person's recordings (here and, if sent, in the Drive) -------------
+document.querySelectorAll("[data-restart]").forEach((b) => { b.onclick = () => $("confirmrestart").classList.remove("hidden"); });
+$("restartcancel").onclick = () => $("confirmrestart").classList.add("hidden");
+$("restartyes").onclick = async () => {
+  generation += 1;
+  if (recording) { recording = false; chunks = []; }
+  const mine = (await allClips()).filter((c) => c.meta.speaker === code && c.meta.session === sessionId);
+  await dbOp("clips", "readwrite", (st) => { mine.forEach((c) => st.delete(c.meta.name)); });
+  await dbOp("state", "readwrite", (st) => st.delete(stateKey()));
+  if (UPLOAD_URL) {
+    // Moves this person's files to the Drive trash (recoverable for 30 days).
+    fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({ action: "reset", code, session: sessionId }) })
+      .catch(() => {});
+  }
+  order = []; idx = 0; current = null;
+  $("consent").checked = false; refreshStart();
+  $("uploadstatus").textContent = "";
+  $("confirmrestart").classList.add("hidden");
+  show("setup");
+  window.scrollTo(0, 0);
+};
+$("more").onclick = async () => {
+  const done = new Set(order.map((p) => p.id));
+  const extra = slice(phrases.filter((p) => !done.has(p.id)), speakerIndex(), EXTRA);
+  if (!extra.length) { $("more").disabled = true; return; }
+  order = order.concat(seededShuffle(extra, `${code}|${MODE}|${order.length}`));
+  await put("state", stateKey(), { idx, order: order.map((x) => x.id) });
+  show("record"); render();
+};
+
+if (MODE === "post_rep") {
+  document.body.classList.add("postrep");
+  $("exertionbox").classList.remove("hidden");
+  $("quietbox").classList.add("hidden");
+  $("setuphint").textContent = "Get properly out of breath first (a hard rep, set or 30-45 s of burpees), " +
+    "then record right away. Tap to start recording, say the phrase, tap again to stop.";
+}
+if (params.get("code")) $("code").value = params.get("code");
+</script>
+</body>
+</html>

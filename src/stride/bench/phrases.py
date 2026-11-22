@@ -87,3 +87,26 @@ def load_phrases(path: Path) -> tuple[int, list[Phrase]]:
     if dupes := {i for i in ids if ids.count(i) > 1}:
         raise PhraseError(f"duplicate phrase ids: {sorted(dupes)}")
     return version, phrases
+
+
+def to_web_json(version: int, phrases: list[Phrase]) -> dict[str, Any]:
+    """The phrase set as the recording page reads it (``docs/record/phrases.json``)."""
+    return {
+        "version": version,
+        "phrases": [
+            {
+                "id": p.id,
+                "group": p.group.value,
+                "display": p.display,
+                "own_words": p.group is PhraseGroup.OWN_WORDS,
+                "post_rep": p.post_rep,
+            }
+            for p in phrases
+        ],
+    }
+
+
+if __name__ == "__main__":  # regenerate: python -m stride.bench.phrases > docs/record/phrases.json
+    import json
+
+    print(json.dumps(to_web_json(*load_phrases(Path("bench/phrases.toml"))), indent=1))

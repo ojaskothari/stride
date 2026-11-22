@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from stride.bench.phrases import Phrase, PhraseError, PhraseGroup, load_phrases
+from stride.bench.phrases import Phrase, PhraseError, PhraseGroup, load_phrases, to_web_json
 from stride.intent import IntentKind, parse
 
 PHRASES = Path(__file__).resolve().parents[1] / "bench" / "phrases.toml"
@@ -70,3 +70,13 @@ def test_duplicate_ids_are_rejected(tmp_path: Path) -> None:
     f.write_text("version = 1\n" + entry + entry)
     with pytest.raises(PhraseError, match="duplicate"):
         load_phrases(f)
+
+
+def test_recording_page_phrases_are_in_sync() -> None:
+    import json
+
+    page = PHRASES.parents[1] / "docs" / "record" / "phrases.json"
+    expected = to_web_json(*load_phrases(PHRASES))
+    assert json.loads(page.read_text()) == expected, (
+        "regenerate: python -m stride.bench.phrases > docs/record/phrases.json"
+    )
