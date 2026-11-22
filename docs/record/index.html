@@ -237,6 +237,19 @@
 <script>
 "use strict";
 const params = new URLSearchParams(location.search);
+// GitHub Pages lets browsers reuse a cached copy for 10 minutes, so after a fix people could keep
+// running the old page. Compare against the live copy and reload once if this one is stale.
+const BUILD = "2026-11-22.3";
+(async () => {
+  try {
+    const live = await (await fetch(location.pathname, { cache: "no-store" })).text();
+    const m = live.match(/const BUILD = "([^"]+)"/);
+    if (m && m[1] !== BUILD && sessionStorage.getItem("stride-reloaded") !== m[1]) {
+      sessionStorage.setItem("stride-reloaded", m[1]);
+      const u = new URL(location.href); u.searchParams.set("v", m[1]); location.replace(u);
+    }
+  } catch (_) { /* offline or blocked: keep running this copy */ }
+})();
 // ---- configuration --------------------------------------------------------------------------
 // Upload address of the Google Apps Script (docs/record/upload.gs). Empty = download-only.
 const UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxcQPoBEllxwGupijrJvX6AplhG7aY_s7h8M3SZChfIgEGeXTbFwYN3JfaLj0ImBejOtA/exec";
