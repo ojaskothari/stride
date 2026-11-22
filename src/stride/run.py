@@ -101,7 +101,8 @@ def run(cfg: Config, env: str | None) -> int:
         f"  mic: {mic.name} · output latency {player.output_latency * 1000:.0f} ms"
         f" · log: {log.path}\n"
         "\nTap any key, then speak. Tap again to finish early. q to quit.\n"
-        '  try: "start my rest" · "add 30 seconds" · "how much time left" · "stop"\n'
+        '  rest:    "start my rest" · "add 30 seconds" · "how much time left" · "stop"\n'
+        '  workout: "8 by 300, 90 rest" · "go" · tap at the finish + "done" · "summary"\n'
     )
 
     from stride.trigger.keyboard import Keyboard

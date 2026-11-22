@@ -119,7 +119,8 @@ class Session:
         intent = parse(text) if u.reason is not EndReason.NO_SPEECH else Intent(IntentKind.UNKNOWN)
         utt_id = self._next_id
         self._next_id += 1
-        reply = self.coach.handle(intent, now)
+        # The tap time ends a rep: the transcript arrives 1-2 s after the athlete crossed the line.
+        reply = self.coach.handle(intent, now, t_trigger=u.t_listen)
         reply = Speech(reply.parts, reply.due, reply.mark, tag=utt_id)
 
         if self._log is not None:
@@ -152,13 +153,22 @@ class Session:
             with self._lock:
                 self._pending[utt_id] = record
         self._speaker.say(reply)
+        self._write_events()
         return Heard(text, intent, reply)
 
     def tick(self, now: float) -> list[Speech]:
         cues = self.coach.tick(now)
         for s in cues:
             self._speaker.say(s)
+        self._write_events()
         return cues
+
+    def _write_events(self) -> None:
+        """Plans, splits and summaries from the coach go straight into the session log."""
+        events = self.coach.drain_events()
+        if self._log is not None:
+            for e in events:
+                self._log.write({**e, "wall": datetime.now().isoformat(timespec="seconds")})
 
     # --- called from the audio thread as speech starts ----------------------------------------
 
