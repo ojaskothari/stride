@@ -8,11 +8,12 @@ import pytest
 
 from stride.audio.vad import FRAME, FRAME_S, Audio, EndReason, Utterance
 from stride.config import Config
-from stride.intent import IntentKind
+from stride.intent import Intent, IntentKind
 from stride.log import SessionLog, read_log
 from stride.session import Session
 from stride.stt import Transcript
 from stride.workout import Speech
+from stride.workout import phrases as ph
 
 RNG = np.random.default_rng(1)
 
@@ -198,3 +199,29 @@ def test_env_tag_is_sanitized_in_filename(tmp_path: Path) -> None:
     log = SessionLog(tmp_path, "Wind / 20mph", save_audio=False, now=datetime(2026, 1, 2, 3, 4, 5))
     assert log.path.name == "20260102-030405-wind-20mph.jsonl"
     log.close()
+
+
+def test_done_split_ends_at_the_tap_and_is_logged(log: SessionLog) -> None:
+    spk, clk = FakeSpeaker(), Clock()
+    s = Session(Config(), spk, log)
+    clk.frames(s, 1.0, -60)
+    s.coach.handle(Intent(IntentKind.GO), clk.t)
+    for _ in range(round(4.2 / 0.05)):  # a little past Go: float steps drift
+        clk.t += 0.05
+        s.tick(clk.t)
+    go_at = s.coach.rep_start
+    assert go_at is not None
+
+    clk.frames(s, 1.0, -60)
+    tap_at = clk.t
+    s.tap(tap_at)
+    clk.frames(s, 0.4, -30)
+    u = clk.frames(s, 1.0, -60)
+    assert u is not None
+    h = s.heard(u, Transcript("done", 0.3), clk.t + 0.3)  # handled ~1.3 s after the tap
+    split = tap_at - go_at
+    assert h.reply.parts[:3] == ("Rep 1", *ph.time(split))
+    s.flush()
+    log.close()
+    split_rec = next(r for r in read_log(log.path) if r["type"] == "split")
+    assert split_rec["seconds"] == pytest.approx(split, abs=0.01)

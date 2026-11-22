@@ -144,7 +144,9 @@ def test_read_wav_rejects_stereo(tmp_path: Path) -> None:
 def test_resolve_prefers_whole_clip() -> None:
     parts = ("Resting", "1 minute", "30")
     assert catalog.resolve(parts, lambda t: True) == ["Resting 1 minute 30"]
-    assert catalog.resolve(parts, lambda t: False) == list(parts)
+    assert catalog.resolve(parts, lambda t: t in parts) == list(parts)
+    # A fragment is missing ("8 by 300"): render the whole phrase once, not each fragment.
+    assert catalog.resolve(parts, lambda t: False) == ["Resting 1 minute 30"]
     assert catalog.resolve(("Go",), lambda t: False) == ["Go"]
 
 
@@ -214,3 +216,15 @@ def test_reply_clears_queued_cues() -> None:
     popped = q.pop(88.0)
     assert popped is not None
     assert popped.parts == ph.STOPPED
+
+
+def test_workout_phrases_are_fully_fragmented() -> None:
+    frags = catalog.fragments()
+    whole = catalog.texts(catalog.whole_phrases(Config().cues.marks))
+    for tenths in range(1, 15 * 600):  # every split up to 15 minutes
+        assert set(ph.time(tenths / 10)) <= frags, tenths
+    for total in range(1, 51):
+        for k in range(1, total + 1):
+            assert set(ph.go_rep(k, total)) <= frags
+    for p in (ph.READY, ph.SAY_GO, ph.NO_WORKOUT, ph.NO_SPLITS, ph.WORKOUT_ENDED):
+        assert " ".join(p) in whole
