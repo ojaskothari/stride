@@ -70,11 +70,20 @@ class AudioPlayer:
         self._stream.stop()
         self._stream.close()
 
+    def _pop(self) -> Speech | None:
+        # Judge staleness at the moment the audio will be *heard*, not when it's written.
+        return self.queue.pop(time.monotonic() + self.output_latency)
+
+    def dropped(self) -> list[Speech]:
+        with self._lock:
+            out, self.queue.dropped = self.queue.dropped, []
+        return out
+
     def _run(self) -> None:
         while True:
             with self._lock:
                 speech = None
-                while not self._stop and (speech := self.queue.pop(time.monotonic())) is None:
+                while not self._stop and (speech := self._pop()) is None:
                     self._lock.wait(timeout=0.02)
                 if self._stop:
                     return
@@ -90,8 +99,8 @@ class AudioPlayer:
             self._stream.write(np.concatenate(chunks))
 
 
-class PrintPlayer:
-    """``tts.backend = "none"``: print instead of speaking (headless runs, debugging)."""
+class SilentPlayer:
+    """``tts.backend = "none"``: no audio (headless runs). The run loop prints replies."""
 
     output_latency = 0.0
 
@@ -101,7 +110,6 @@ class PrintPlayer:
     def say(self, speech: Speech) -> None:
         if self._on_spoken:
             self._on_spoken(speech, time.monotonic())
-        print(f"  stride: {speech.text}", flush=True)
 
     def hold(self) -> None: ...
 
