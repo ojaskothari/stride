@@ -16,6 +16,11 @@ speech recover, and how much gap remains, all evaluated on held-out speakers, no
 > **Status:** early development (M0: foundation). Nothing here is usable at the track yet, and there
 > are no results to report yet.
 
+## Docs
+
+- [Decision log](docs/decisions.md): design decisions and the evidence behind them
+- [Spikes](docs/spikes.md): hardware and library measurements on the target laptop
+
 ## Development
 
 Requires Python 3.11+.
