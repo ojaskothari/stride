@@ -1,0 +1,466 @@
+# The phrases every speaker records for the noise study. FROZEN once recording starts:
+# changing a phrase's text or label after clips exist breaks the labels of those clips.
+# Add new phrases with new ids instead, and bump `version`.
+#
+# group:
+#   core      read aloud as written; may be used for training (M5)
+#   heldout   read aloud as written; NEVER used for training. Measures whether stride understands
+#             phrasings nobody designed for. Chosen before any results exist.
+#   own_words the speaker sees a situation, not a sentence, and says it however they naturally
+#             would. NEVER used for training. The speaker types what they said.
+# post_rep: also recorded right after a hard rep (the short list for practice sessions).
+# Labels: intent + slots exactly as stride.intent.Intent. Omitted slot = not stated.
+
+version = 1
+
+# --- start a rest ---------------------------------------------------------------------------
+[[phrase]]
+id = "r01"
+text = "start my rest"
+intent = "start_rest"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "r02"
+text = "rest"
+intent = "start_rest"
+group = "core"
+
+[[phrase]]
+id = "r03"
+text = "start my 3 minute rest"
+intent = "start_rest"
+seconds = 180
+group = "core"
+
+[[phrase]]
+id = "r04"
+text = "rest 90"
+intent = "start_rest"
+seconds = 90
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "r05"
+text = "rest for 2 minutes"
+intent = "start_rest"
+seconds = 120
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "r06"
+text = "rest a minute thirty"
+intent = "start_rest"
+seconds = 90
+group = "core"
+
+[[phrase]]
+id = "r07"
+text = "set a timer for 45 seconds"
+intent = "start_rest"
+seconds = 45
+group = "core"
+
+[[phrase]]
+id = "r08"
+text = "start a 4 minute rest"
+intent = "start_rest"
+seconds = 240
+group = "core"
+
+[[phrase]]
+id = "r09"
+text = "rest two and a half minutes"
+intent = "start_rest"
+seconds = 150
+group = "core"
+
+[[phrase]]
+id = "r10"
+text = "rest 1:30"
+intent = "start_rest"
+seconds = 90
+group = "core"
+
+# --- add time -------------------------------------------------------------------------------
+[[phrase]]
+id = "a01"
+text = "add 30 seconds"
+intent = "add_time"
+seconds = 30
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "a02"
+text = "add a minute"
+intent = "add_time"
+seconds = 60
+group = "core"
+
+[[phrase]]
+id = "a03"
+text = "another minute"
+intent = "add_time"
+seconds = 60
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "a04"
+text = "add time"
+intent = "add_time"
+group = "core"
+
+[[phrase]]
+id = "a05"
+text = "extend by 2 minutes"
+intent = "add_time"
+seconds = 120
+group = "core"
+
+[[phrase]]
+id = "a06"
+text = "add 15 seconds"
+intent = "add_time"
+seconds = 15
+group = "core"
+
+[[phrase]]
+id = "a07"
+text = "add 10"
+intent = "add_time"
+seconds = 10
+group = "core"
+
+# --- time left ------------------------------------------------------------------------------
+[[phrase]]
+id = "s01"
+text = "how much time left"
+intent = "status"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "s02"
+text = "time check"
+intent = "status"
+group = "core"
+
+[[phrase]]
+id = "s03"
+text = "how long do I have"
+intent = "status"
+group = "core"
+
+[[phrase]]
+id = "s04"
+text = "time left"
+intent = "status"
+group = "core"
+
+# --- stop -----------------------------------------------------------------------------------
+[[phrase]]
+id = "x01"
+text = "stop"
+intent = "stop"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "x02"
+text = "skip"
+intent = "stop"
+group = "core"
+
+[[phrase]]
+id = "x03"
+text = "cancel the timer"
+intent = "stop"
+group = "core"
+
+[[phrase]]
+id = "x04"
+text = "I'm ready"
+intent = "stop"
+group = "core"
+
+# --- workout plans --------------------------------------------------------------------------
+[[phrase]]
+id = "p01"
+text = "8 by 300, 90 rest"
+intent = "plan"
+reps = 8
+distance_m = 300
+seconds = 90
+group = "core"
+
+[[phrase]]
+id = "p02"
+text = "6 by 200 with 2 minutes rest"
+intent = "plan"
+reps = 6
+distance_m = 200
+seconds = 120
+group = "core"
+
+[[phrase]]
+id = "p03"
+text = "4 by 400, 3 minute rest"
+intent = "plan"
+reps = 4
+distance_m = 400
+seconds = 180
+group = "core"
+
+[[phrase]]
+id = "p04"
+text = "10 by 100, 60 rest"
+intent = "plan"
+reps = 10
+distance_m = 100
+seconds = 60
+group = "core"
+
+[[phrase]]
+id = "p05"
+text = "12 by 200, 45 seconds rest"
+intent = "plan"
+reps = 12
+distance_m = 200
+seconds = 45
+group = "core"
+
+# --- go / done ------------------------------------------------------------------------------
+[[phrase]]
+id = "g01"
+text = "go"
+intent = "go"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "g02"
+text = "let's go"
+intent = "go"
+group = "core"
+
+[[phrase]]
+id = "g03"
+text = "start the workout"
+intent = "go"
+group = "core"
+
+[[phrase]]
+id = "d01"
+text = "done"
+intent = "done"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "d02"
+text = "done with the rep"
+intent = "done"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "d03"
+text = "finished"
+intent = "done"
+group = "core"
+
+# --- summary, rep count, end ----------------------------------------------------------------
+[[phrase]]
+id = "m01"
+text = "summary"
+intent = "summary"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "m02"
+text = "how did I do"
+intent = "summary"
+group = "core"
+
+[[phrase]]
+id = "m03"
+text = "give me my splits"
+intent = "summary"
+group = "core"
+
+[[phrase]]
+id = "q01"
+text = "what rep am I on"
+intent = "rep_status"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "q02"
+text = "how many reps left"
+intent = "rep_status"
+group = "core"
+
+[[phrase]]
+id = "e01"
+text = "end workout"
+intent = "end_workout"
+group = "core"
+
+[[phrase]]
+id = "e02"
+text = "I'm done with the workout"
+intent = "end_workout"
+group = "core"
+
+# --- not commands (stride must NOT act on these) --------------------------------------------
+[[phrase]]
+id = "n01"
+text = "that one hurt"
+intent = "unknown"
+group = "core"
+post_rep = true
+
+[[phrase]]
+id = "n02"
+text = "my legs are dead"
+intent = "unknown"
+group = "core"
+
+[[phrase]]
+id = "n03"
+text = "nice run"
+intent = "unknown"
+group = "core"
+
+# --- held-out phrasings (never trained on) --------------------------------------------------
+[[phrase]]
+id = "h01"
+text = "give me another minute"
+intent = "add_time"
+seconds = 60
+group = "heldout"
+post_rep = true
+
+[[phrase]]
+id = "h02"
+text = "one more minute please"
+intent = "add_time"
+seconds = 60
+group = "heldout"
+
+[[phrase]]
+id = "h03"
+text = "wrap it up"
+intent = "end_workout"
+group = "heldout"
+
+[[phrase]]
+id = "h04"
+text = "start the next one"
+intent = "go"
+group = "heldout"
+
+[[phrase]]
+id = "h05"
+text = "I'm done for today"
+intent = "end_workout"
+group = "heldout"
+
+[[phrase]]
+id = "h06"
+text = "how am I looking on time"
+intent = "status"
+group = "heldout"
+
+[[phrase]]
+id = "h07"
+text = "put me on a two minute break"
+intent = "start_rest"
+seconds = 120
+group = "heldout"
+
+[[phrase]]
+id = "h08"
+text = "finished that one"
+intent = "done"
+group = "heldout"
+post_rep = true
+
+[[phrase]]
+id = "h09"
+text = "where am I at in the workout"
+intent = "rep_status"
+group = "heldout"
+
+[[phrase]]
+id = "h10"
+text = "kill the timer"
+intent = "stop"
+group = "heldout"
+
+[[phrase]]
+id = "h11"
+text = "how were my times"
+intent = "summary"
+group = "heldout"
+
+[[phrase]]
+id = "h12"
+text = "ninety seconds"
+intent = "start_rest"
+seconds = 90
+group = "heldout"
+
+# --- own words (situation shown, speaker phrases it; never trained on) ----------------------
+[[phrase]]
+id = "o01"
+prompt = "You just finished a rep. Tell stride."
+intent = "done"
+group = "own_words"
+post_rep = true
+
+[[phrase]]
+id = "o02"
+prompt = "Ask for 2 more minutes of rest."
+intent = "add_time"
+seconds = 120
+group = "own_words"
+
+[[phrase]]
+id = "o03"
+prompt = "Ask how much rest is left."
+intent = "status"
+group = "own_words"
+post_rep = true
+
+[[phrase]]
+id = "o04"
+prompt = "Start a 90-second rest."
+intent = "start_rest"
+seconds = 90
+group = "own_words"
+
+[[phrase]]
+id = "o05"
+prompt = "End the whole workout."
+intent = "end_workout"
+group = "own_words"
+
+[[phrase]]
+id = "o06"
+prompt = "Ask which rep you're on."
+intent = "rep_status"
+group = "own_words"
+
+[[phrase]]
+id = "o07"
+prompt = "Ask how your reps went."
+intent = "summary"
+group = "own_words"
