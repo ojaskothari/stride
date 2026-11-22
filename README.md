@@ -32,9 +32,13 @@ python3.12 -m venv .venv
 Configuration lives in [`config.toml`](config.toml). Every value has a built-in default, so you
 only need to keep the keys you change, and unknown keys are rejected.
 
-**macOS note:** if `import stride` fails after an editable install, the `.pth` file pip wrote may
-carry the macOS `hidden` flag (common in iCloud-synced folders), and Python 3.12+ skips hidden
-`.pth` files. Fix it with `chflags nohidden .venv/lib/python3.*/site-packages/*.pth`.
+**macOS + iCloud Drive:** if the repo lives in an iCloud-synced folder (e.g. Desktop), iCloud
+re-applies the `hidden` flag to the venv's `.pth` file, and Python 3.12+ skips hidden `.pth` files,
+so `import stride` fails. iCloud ignores names ending in `.nosync`, so create the venv as
+`python3.12 -m venv .venv.nosync && ln -s .venv.nosync .venv`. That also keeps iCloud from
+uploading the venv.
+
+Live audio needs the optional extra: `.venv/bin/pip install -e '.[dev,audio]'`.
 
 ## Layout
 
