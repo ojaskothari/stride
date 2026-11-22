@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Never commit raw audio, personal session logs or model weights.
+# Manifests and the scripts that rebuild datasets ARE committed.
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.ogg
+logs/
+sessions/
+bench/data/raw/
+bench/data/noise/
+bench/data/mixed/
+bench/data/recordings/
+bench/cache/
+models/
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+
+# Local overrides (secrets never belong in config.toml either)
+config.local.toml
+.env
+
+# Private planning brief (contains outreach strategy); kept local, out of the public repo
+STRIDE_CLAUDE.md
+CLAUDE.md
