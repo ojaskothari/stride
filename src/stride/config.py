@@ -58,6 +58,7 @@ class AudioConfig:
 @dataclass(frozen=True)
 class TtsConfig:
     backend: str = "say"
+    voice: str = ""  # a `say -v` voice name; empty uses the system voice
 
 
 @dataclass(frozen=True)

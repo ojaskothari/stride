@@ -63,3 +63,23 @@ start cues early by the output stream's reported latency, since Bluetooth earbud
 - The quietest frame was −173 dBFS (digital silence while the stream starts), so **noise-floor
   calibration discards the first ~200 ms** after opening the stream.
 - Native rate is 48 kHz, and requesting 16 kHz works (CoreAudio resamples).
+
+## 4. Rendering the cue catalog (2026-11-21)
+
+The catalog is 315 clips: whole phrases for a normal session (rests on 15 s steps to 10:00, status
+values, common adds, cues, replies) plus the fragments any other phrase is stitched from.
+
+| Method | Time for 315 clips |
+|---|---|
+| One `say -o` per clip, 1 worker | ~1,317 ms/clip (≈ 7 min) |
+| One `say -o` per clip, 4 / 8 workers | 642 / 571 ms/clip (≈ 3 min): the speech service serializes |
+| **Batches: one `say` call per ~79 phrases, separated by `[[slnc 500]]`, split on silence, 4 in parallel** | **54.7 s** |
+
+Every batch split into exactly one segment per phrase (checked on 4- and 8-way chunking). The code
+still checks the count and falls back to per-phrase renders for a batch that doesn't match, so a
+bad split can't attach the wrong audio to a phrase. Each phrase ends with a period so it keeps
+sentence-final intonation, as a standalone render would.
+
+One run took over 5 minutes (≈ 0.5× realtime) right after several minutes of continuous rendering
+and killed `say` processes; a rerun on an idle machine took 54.7 s again. Likely thermal throttling
+(fanless MacBook Air) or a wedged speech daemon. It's a first-run-only cost either way.
