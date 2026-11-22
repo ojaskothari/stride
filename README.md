@@ -13,7 +13,7 @@ The engineering core is a **noise study**: measuring how breathing, wind and cro
 on-device speech recognition, how much noise suppression and a Whisper model fine-tuned on workout
 speech recover, and how much gap remains, all evaluated on held-out speakers, noise and phrasings.
 
-> **Status:** early development (M0: foundation). Nothing here is usable at the track yet, and there
+> **Status:** early development (M1 in progress: timer product). Nothing here is usable at the track yet, and there
 > are no results to report yet.
 
 ## Docs
