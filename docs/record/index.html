@@ -104,8 +104,8 @@
       try to have no music or people talking in the background.</p>
 
     <div class="field" id="namefield">
-    <label for="name">your first name (only i see this, your recordings are saved under a number)</label>
-    <input id="name" type="text" autocomplete="given-name" maxlength="40">
+    <label for="name">your first and last name (only i see this, your recordings are saved under a number)</label>
+    <input id="name" type="text" autocomplete="name" autocapitalize="none" maxlength="60" placeholder="maya chen">
     </div>
     <p class="msg hidden" id="codenote"></p>
 
@@ -207,6 +207,18 @@
     </div>
   </div>
 
+  <!-- this name already recorded -->
+  <div class="modal hidden" id="samename" role="dialog" aria-modal="true" aria-labelledby="samenametitle">
+    <div class="sheet">
+      <h2 id="samenametitle">is that you?</h2>
+      <p id="samenametext"></p>
+      <div class="row">
+        <button id="samenameno">no, i'm someone else</button>
+        <button id="samenameyes" class="primary">yes, that's me</button>
+      </div>
+    </div>
+  </div>
+
   <!-- confirm restart -->
   <div class="modal hidden" id="confirmrestart" role="dialog" aria-modal="true" aria-labelledby="restarttitle">
     <div class="sheet">
@@ -239,7 +251,7 @@
 const params = new URLSearchParams(location.search);
 // GitHub Pages lets browsers reuse a cached copy for 10 minutes, so after a fix people could keep
 // running the old page. Compare against the live copy and reload once if this one is stale.
-const BUILD = "2026-11-22.3";
+const BUILD = "2026-11-22.4";
 (async () => {
   try {
     const live = await (await fetch(location.pathname, { cache: "no-store" })).text();
@@ -635,8 +647,10 @@ async function download() {
 }
 
 // ---- wiring -------------------------------------------------------------------------------
+const normName = (v) => v.trim().toLowerCase().replace(/\s+/g, " ");
+const PERSON_RE = /^(?=.{3,60}$)[\p{L}][\p{L}.'-]*( [\p{L}][\p{L}.'-]*)+$/u;  // same rule as upload.gs
 function validSetup() {
-  const who = FIXED_CODE ? /^S\d{2,3}$/.test(FIXED_CODE) : $("name").value.trim().length > 0;
+  const who = FIXED_CODE ? /^S\d{2,3}$/.test(FIXED_CODE) : PERSON_RE.test(normName($("name").value));
   return who && $("devtype").value
     && (MODE !== "post_rep" || $("exertion").value) && $("consent").checked && stream
     && roomDbfs !== null;
@@ -688,6 +702,7 @@ async function roomCheck() {
   m.className = noisy ? "msg warn" : "msg";
   refreshStart();
 }
+$("name").addEventListener("blur", () => { $("name").value = normName($("name").value); });
 for (const id of ["name", "devtype", "exertion", "consent"]) $(id).addEventListener("input", refreshStart);
 
 $("start").onclick = () => {
@@ -707,7 +722,7 @@ $("rulesok").onclick = async () => {
 // (so one voice never ends up under two numbers), and the name itself stays in the script's roster.
 async function claimCode() {
   if (FIXED_CODE) return FIXED_CODE;
-  const name = $("name").value.trim().toLowerCase().replace(/\s+/g, " ");
+  const name = normName($("name").value);
   try {
     const saved = JSON.parse(localStorage.getItem("stride-codes") || "{}");
     if (saved[name]) return saved[name];
@@ -717,13 +732,30 @@ async function claimCode() {
   const out = await r.json();
   if (!out.ok) {
     throw new Error({ "bad key": "This link doesn't work. Ask Ojas for the right one.",
-      full: "Recording is closed. Thanks anyway!" }[out.error] || "Couldn't get started. Check your internet and try again.");
+      full: "Recording is closed. Thanks anyway!",
+      "bad name": "Type your first and last name (letters only)." }[out.error]
+      || "Couldn't get started. Check your internet and try again.");
+  }
+  // Someone with this exact name already recorded: same person on another device, or a namesake?
+  if (out.existing && out.clips > 0 && !(await askSameName(name, out.clips))) {
+    throw new Error("Got it. Add your middle initial (like \"maya r chen\") so you get your own spot.");
   }
   try {
     const saved = JSON.parse(localStorage.getItem("stride-codes") || "{}");
     saved[name] = out.code; localStorage.setItem("stride-codes", JSON.stringify(saved));
   } catch (_) { /* fine: the script remembers the name too */ }
   return out.code;
+}
+
+function askSameName(name, clips) {
+  return new Promise((resolve) => {
+    $("samenametext").textContent = `someone named ${name} already recorded ${clips} phrase${clips === 1 ? "" : "s"}. ` +
+      "if that was you, you can keep going. if not, you'll just need to add something to your name.";
+    $("samename").classList.remove("hidden");
+    const done = (yes) => { $("samename").classList.add("hidden"); resolve(yes); };
+    $("samenameyes").onclick = () => done(true);
+    $("samenameno").onclick = () => done(false);
+  });
 }
 
 async function begin() {

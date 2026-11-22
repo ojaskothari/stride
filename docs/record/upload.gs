@@ -9,7 +9,7 @@
 // Then Deploy -> New deployment -> Web app -> Execute as: Me, Who has access: Anyone.
 // Paste the web-app URL into UPLOAD_URL in index.html.
 //
-// Friends type a first name and get
+// Friends type their first and last name and get
 // the next free number (S02, S03, ...). The same name always gets the same number back. Names are
 // stored only in the ROSTER script property and mirrored to _roster.txt in the folder; clips are
 // saved under the number. A re-recorded clip replaces the old one, and "restart" moves a speaker's
@@ -24,7 +24,8 @@ const MAX_CLIPS_PER_CODE = 400;
 const MAX_SPEAKERS = 100;
 const FIRST_AUTO_NUMBER = 2;              // S01 is the project owner
 const NAME_RE = /^S\d{2,3}_[A-Za-z0-9-]{1,40}_[a-z]\d{2}$/;
-const PERSON_RE = /^[\p{L}][\p{L} .'-]{0,39}$/u;
+// First and last name, lowercase, single spaces: "maya chen", "jo-ann o'neil", "maya r chen".
+const PERSON_RE = /^(?=.{3,60}$)[\p{L}][\p{L}.'-]*( [\p{L}][\p{L}.'-]*)+$/u;
 
 function doPost(e) {
   try {
@@ -50,7 +51,8 @@ function allowedCodes(props) {
   return new Set(manual.concat(Object.keys(r).map((n) => r[n])));
 }
 
-// Give this first name its number: the existing one if the name was seen before, else the next free.
+// Give this name its number: the existing one if the name was seen before, else the next free.
+// For a known name, also say how many clips it already has, so the page can ask "is that you?".
 function claim(props, req) {
   const name = String(req.name || "").trim().toLowerCase().replace(/\s+/g, " ");
   if (!PERSON_RE.test(name)) return reply({ ok: false, error: "bad name" });
@@ -58,7 +60,10 @@ function claim(props, req) {
   lock.waitLock(20000);
   try {
     const r = roster(props);
-    if (r[name]) return reply({ ok: true, code: r[name] });
+    if (r[name]) {
+      const clips = Number(props.getProperty("N_" + r[name]) || 0);
+      return reply({ ok: true, code: r[name], existing: true, clips: clips });
+    }
     const taken = allowedCodes(props);
     if (Object.keys(r).length >= MAX_SPEAKERS) return reply({ ok: false, error: "full" });
     let n = FIRST_AUTO_NUMBER;
