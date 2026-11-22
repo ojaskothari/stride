@@ -76,6 +76,7 @@ _DIST_UNITS = {
     "mile": 1609, "miles": 1609,
 }  # fmt: skip
 MAX_REPS = 50
+_ADD_BARE_MINUTES_MAX = 5  # "add N" with no unit: 1-5 are minutes, larger are seconds
 _REP_QUESTION = {"what", "whats", "which", "how", "count", "number", "many"}
 _START = {"start", "begin", "set", "restart", "reset", "starting", "new"}
 _ADD = {"add", "plus", "extend", "extra", "another", "more"}
@@ -208,8 +209,11 @@ def _canonicalize(toks: list[Token]) -> list[Token]:
     return out
 
 
-def _find_duration(toks: list[Token]) -> tuple[int, int, int] | None:
-    """First duration in ``toks``: (seconds, start, end). Bare numbers <= 10 are minutes."""
+def _find_duration(toks: list[Token], bare_minutes_max: int = 10) -> tuple[int, int, int] | None:
+    """First duration in ``toks``: (seconds, start, end).
+
+    A bare number (no unit) up to ``bare_minutes_max`` is minutes, larger is seconds.
+    """
     # "half a minute" / "half minute" (but not the tail of "two and a half minutes")
     for i, t in enumerate(toks):
         if t == "half" and not (i >= 2 and toks[i - 2] == "and" and toks[i - 1] in ("a", 1)):
@@ -263,7 +267,7 @@ def _find_duration(toks: list[Token]) -> tuple[int, int, int] | None:
         # Bare number: small numbers are minutes ("rest 3"), larger are seconds ("rest 90").
         if at(i + 1) in _NOT_TIME:
             continue
-        if isinstance(t, float) or t <= 10:
+        if isinstance(t, float) or t <= bare_minutes_max:
             return round(t * 60), i, i + 1
         return t, i, i + 1
     return None
@@ -354,7 +358,9 @@ def parse(text: str) -> Intent:
         return make(IntentKind.START_REST, seconds)
     # "another" / "more" alone ("one more rep") are not an add without a duration or "time".
     if wset & _ADD and (seconds is not None or wset & {"add", "extend", "plus", "extra", "time"}):
-        return make(IntentKind.ADD_TIME, seconds)
+        # Extensions are short: "add 2" is two minutes, but "add 10" is ten seconds, not minutes.
+        added = _find_duration(toks, bare_minutes_max=_ADD_BARE_MINUTES_MAX)
+        return make(IntentKind.ADD_TIME, added[0] if added else None)
     if wset & _REST or (seconds is not None and len(wset - {"for", "my", "a", "of"}) == 0):
         return make(IntentKind.START_REST, seconds)
     return make(IntentKind.UNKNOWN)
