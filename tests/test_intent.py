@@ -189,6 +189,7 @@ def test_not_a_plan(text: str) -> None:
         ("how did I do", IntentKind.SUMMARY),
         ("read my splits", IntentKind.SUMMARY),
         ("what rep am I on", IntentKind.REP_STATUS),
+        ("What's rep am I on?", IntentKind.REP_STATUS),  # live transcript
         ("how many reps left", IntentKind.REP_STATUS),
         ("rep count", IntentKind.REP_STATUS),
         ("end workout", IntentKind.END_WORKOUT),
