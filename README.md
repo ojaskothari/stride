@@ -13,10 +13,13 @@ The engineering core is a **noise study**: measuring how breathing, wind and cro
 on-device speech recognition, how much noise suppression and a Whisper model fine-tuned on workout
 speech recover, and how much gap remains, all evaluated on held-out speakers, noise and phrasings.
 
-> **Status:** M1 (timer product) is built: tap a key, speak, and stride starts, extends, reports and
-> stops a rest with spoken countdown cues. It's tested end to end on synthesized speech; live trials
-> with real voices are next. Earbud tap, workout plans and the noise study are later milestones, so
-> there are no accuracy results yet.
+**Siri sets timers; stride runs your interval session.** Load a plan once ("8 by 300, 90 rest"),
+then say one word per rep: "done" logs your split, starts the rest, and counts you into the next
+rep. At the end you hear your average, fastest, slowest and how much you faded.
+
+> **Status:** M2 (workouts) is built: plans, a 3-2-1 start, tap-timed splits, auto-rest, rep counts
+> and a spoken summary, on top of the M1 voice timer. Earbud tap and the noise study are later
+> milestones, so there are no accuracy results yet.
 
 ## Try it (macOS)
 
@@ -36,6 +39,23 @@ right away. `q` quits. macOS asks for microphone access for your terminal on fir
 | "how much time left?" | "1 minute 25 left" |
 | "add 30 seconds" / "another minute" | extends the rest |
 | "stop" / "skip" / "I'm ready" | ends the rest |
+
+**Workouts:**
+
+| Say | stride |
+|---|---|
+| "8 by 300, 90 rest" / "6 x 400 with 2 minute rest" / "4 by 1 mile, 3 minutes" | loads the plan |
+| "go" | "Ready… 3, 2, 1, Go": rep 1 starts on "Go" |
+| (tap at the finish) "done" | "Rep 1, 48 point 2. Resting 1 minute 30", then "Go, rep 2 of 8" |
+| "stop" / "go" during a planned rest | skips the rest and starts the next rep now |
+| "what rep am I on" | "Rep 3 of 8" |
+| "summary" / "how did I do" | splits so far: average, fastest, slowest, fade |
+| "end workout" | stops and gives the summary |
+
+**Splits end at your tap, not when you finish saying "done"**, so tap as you cross the line. That's
+hand-timing precision; the transcript arrives 1–2 s later. A rep starts when stride's "Go" is
+heard, so a late start counts in the split. No plan? Any rest's "Go" starts a rep, and "done" logs a
+split and starts the default rest. Splits and summaries are saved in the session log.
 
 Cues: "2 minutes left" (rests of 3:00 or more), "1 minute left", "30 seconds", "10", "5, 4, 3, 2,
 1", "Go". Anything unrecognized gets a short "Didn't catch that", never a follow-up question.
