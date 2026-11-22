@@ -103,10 +103,11 @@
     <p class="aside" id="quietbox"><strong>please try to find a quiet place to record :)</strong><br>
       try to have no music or people talking in the background.</p>
 
-    <div class="field">
-    <label for="code">your code (it's in the link i sent you)</label>
-    <input id="code" type="text" autocomplete="off" autocapitalize="characters" placeholder="S04">
+    <div class="field" id="namefield">
+    <label for="name">your first name (only i see this, your recordings are saved under a number)</label>
+    <input id="name" type="text" autocomplete="given-name" maxlength="40">
     </div>
+    <p class="msg hidden" id="codenote"></p>
 
     <div class="field">
     <label for="devtype">what are you recording with?</label>
@@ -142,8 +143,8 @@
 
     <div class="check">
       <input type="checkbox" id="consent">
-      <label for="consent">I'm okay with my recordings being used to test stride. They won't be
-        shared or linked to my name.</label>
+      <label for="consent">I'm okay with my recordings being used to test stride. My name is kept
+        separate from them, and neither gets shared.</label>
     </div>
 
     <div class="row go"><button id="start" class="primary" disabled>let's go</button></div>
@@ -247,6 +248,14 @@ const ROTATING = { calm: { core: 9, heldout: 3, own_words: 2 }, post_rep: { any:
 const EXTRA = 10;                      // "do 10 more"
 const ROOM_SECONDS = 3, NOISY_ROOM_DBFS = -50;  // room check during setup (warning only)
 const FULL_SET = params.get("set") === "all";
+// One shared link for everyone: ?k=<secret word>. The script checks it on every request, so people
+// who only read this (public) source can't upload. A fixed ?code=S01 skips the name step.
+const KEY = (() => {
+  const k = params.get("k");
+  try { if (k) localStorage.setItem("stride-k", k); return k || localStorage.getItem("stride-k") || ""; }
+  catch (_) { return k || ""; }
+})();
+const FIXED_CODE = (params.get("code") || "").trim().toUpperCase();
 // Quality gates (on the raw recording, before any processing)
 const MIN_SECONDS = 0.4, MAX_SECONDS = 15, CLIP_PEAK = 0.99, QUIET_DBFS = -45;
 
@@ -438,7 +447,7 @@ function render() {
   $("repbreak").classList.toggle("hidden", !atBreak);
   $("prompt").classList.toggle("hidden", atBreak);
   render.backFromRep = false;
-  $("saylabel").textContent = p.own_words ? "don't read this, say it your own way" : "say";
+  $("saylabel").textContent = p.own_words ? "no script for this one, say it in your own words" : "say";
   $("saylabel").classList.toggle("own", p.own_words);
   $("phrase").textContent = p.own_words ? p.display.replace(/^In your own words: /, "") : `“${p.display}”`;
   $("phrase").classList.toggle("own", p.own_words);
@@ -534,7 +543,7 @@ async function uploadPending() {
       if (c.uploaded || c.meta.speaker !== code) continue;
       // text/plain avoids a CORS preflight, which Apps Script doesn't answer.
       const r = await fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({
-        code, name: c.meta.name, meta: c.meta, wav: await b64(c.wav) }) });
+        key: KEY, code, name: c.meta.name, meta: c.meta, wav: await b64(c.wav) }) });
       const out = await r.json();
       if (!out.ok) throw new Error(out.error || "upload refused");
       c.uploaded = true; await put("clips", c.meta.name, c);
@@ -574,8 +583,8 @@ async function download() {
 
 // ---- wiring -------------------------------------------------------------------------------
 function validSetup() {
-  code = $("code").value.trim().toUpperCase();
-  return /^S\d{2,3}$/.test(code) && $("devtype").value
+  const who = FIXED_CODE ? /^S\d{2,3}$/.test(FIXED_CODE) : $("name").value.trim().length > 0;
+  return who && $("devtype").value
     && (MODE !== "post_rep" || $("exertion").value) && $("consent").checked && stream
     && roomDbfs !== null;
 }
@@ -626,7 +635,7 @@ async function roomCheck() {
   m.className = noisy ? "msg warn" : "msg";
   refreshStart();
 }
-for (const id of ["code", "devtype", "exertion", "consent"]) $(id).addEventListener("input", refreshStart);
+for (const id of ["name", "devtype", "exertion", "consent"]) $(id).addEventListener("input", refreshStart);
 
 $("start").onclick = () => {
   if (!validSetup()) return;
@@ -641,7 +650,38 @@ $("rulesok").onclick = async () => {
   $("rules").classList.add("hidden");
   await begin();
 };
+// Ask the script for this person's number. The same first name always gets the same number back
+// (so one voice never ends up under two numbers), and the name itself stays in the script's roster.
+async function claimCode() {
+  if (FIXED_CODE) return FIXED_CODE;
+  const name = $("name").value.trim().toLowerCase().replace(/\s+/g, " ");
+  try {
+    const saved = JSON.parse(localStorage.getItem("stride-codes") || "{}");
+    if (saved[name]) return saved[name];
+  } catch (_) { /* storage unavailable: ask the script */ }
+  if (!UPLOAD_URL || !KEY) throw new Error("This link isn't set up for recording. Ask Ojas for the right link.");
+  const r = await fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({ action: "claim", key: KEY, name }) });
+  const out = await r.json();
+  if (!out.ok) {
+    throw new Error({ "bad key": "This link doesn't work. Ask Ojas for the right one.",
+      full: "Recording is closed. Thanks anyway!" }[out.error] || "Couldn't get started. Check your internet and try again.");
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem("stride-codes") || "{}");
+    saved[name] = out.code; localStorage.setItem("stride-codes", JSON.stringify(saved));
+  } catch (_) { /* fine: the script remembers the name too */ }
+  return out.code;
+}
+
 async function begin() {
+  try {
+    $("start").disabled = true; $("setupmsg").textContent = "Getting you set up…"; $("setupmsg").className = "msg";
+    code = await claimCode();
+  } catch (e) {
+    $("setupmsg").textContent = e.message; $("setupmsg").className = "msg warn"; refreshStart();
+    return;
+  }
+  $("setupmsg").textContent = "";
   await loadPhrases();
   const saved = await get("state", stateKey());
   const byId = Object.fromEntries(phrases.map((p) => [p.id, p]));
@@ -669,7 +709,7 @@ $("restartyes").onclick = async () => {
   await dbOp("state", "readwrite", (st) => st.delete(stateKey()));
   if (UPLOAD_URL) {
     // Moves this person's files to the Drive trash (recoverable for 30 days).
-    fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({ action: "reset", code, session: sessionId }) })
+    fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({ action: "reset", key: KEY, code, session: sessionId }) })
       .catch(() => {});
   }
   order = []; idx = 0; current = null;
@@ -695,7 +735,10 @@ if (MODE === "post_rep") {
   $("setuphint").textContent = "Get properly out of breath first (a hard rep, set or 30-45 s of burpees), " +
     "then record right away. Tap to start recording, say the phrase, tap again to stop.";
 }
-if (params.get("code")) $("code").value = params.get("code");
+if (FIXED_CODE) {
+  $("namefield").classList.add("hidden");
+  $("codenote").textContent = `recording as ${FIXED_CODE}`; $("codenote").classList.remove("hidden");
+}
 </script>
 </body>
 </html>

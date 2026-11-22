@@ -410,49 +410,49 @@
   {
    "id": "o01",
    "group": "own_words",
-   "display": "In your own words: You just finished a rep. Tell stride.",
+   "display": "In your own words: pretend you just finished a rep. say whatever you'd naturally say to tell stride (the voice timer) you're done.",
    "own_words": true,
    "post_rep": true
   },
   {
    "id": "o02",
    "group": "own_words",
-   "display": "In your own words: Ask for 2 more minutes of rest.",
+   "display": "In your own words: pretend you're resting and want 2 more minutes. ask stride (the voice timer) for it the way you naturally would.",
    "own_words": true,
    "post_rep": false
   },
   {
    "id": "o03",
    "group": "own_words",
-   "display": "In your own words: Ask how much rest is left.",
+   "display": "In your own words: pretend you're resting and want to know how much time is left. ask stride (the voice timer) the way you naturally would.",
    "own_words": true,
    "post_rep": true
   },
   {
    "id": "o04",
    "group": "own_words",
-   "display": "In your own words: Start a 90-second rest.",
+   "display": "In your own words: pretend you want to start a 90 second rest. tell stride (the voice timer) the way you naturally would.",
    "own_words": true,
    "post_rep": false
   },
   {
    "id": "o05",
    "group": "own_words",
-   "display": "In your own words: End the whole workout.",
+   "display": "In your own words: pretend you're done with the whole workout. tell stride (the voice timer) the way you naturally would.",
    "own_words": true,
    "post_rep": false
   },
   {
    "id": "o06",
    "group": "own_words",
-   "display": "In your own words: Ask which rep you're on.",
+   "display": "In your own words: pretend you lost count of your reps. ask stride (the voice timer) which one you're on, however you'd naturally say it.",
    "own_words": true,
    "post_rep": false
   },
   {
    "id": "o07",
    "group": "own_words",
-   "display": "In your own words: Ask how your reps went.",
+   "display": "In your own words: pretend your workout just ended and you want to know how your reps went. ask stride (the voice timer) the way you naturally would.",
    "own_words": true,
    "post_rep": false
   }
