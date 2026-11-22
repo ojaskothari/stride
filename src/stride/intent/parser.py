@@ -23,6 +23,13 @@ class IntentKind(StrEnum):
     ADD_TIME = "add_time"
     STATUS = "status"
     STOP = "stop"
+    # M2: workouts
+    PLAN = "plan"  # "8 by 300, 90 rest"
+    GO = "go"  # start the workout / the next rep
+    DONE = "done"  # rep finished
+    SUMMARY = "summary"
+    REP_STATUS = "rep_status"  # "what rep am I on"
+    END_WORKOUT = "end_workout"
     UNKNOWN = "unknown"
 
 
@@ -31,11 +38,14 @@ class Intent:
     kind: IntentKind
     # Duration slot. ``None`` means "not stated": the engine applies the plan or a default.
     seconds: int | None = None
+    reps: int | None = None  # PLAN only
+    distance_m: int | None = None  # PLAN only
     text: str = field(default="", compare=False)
 
 
 # --- vocabulary -------------------------------------------------------------------------------
 
+_BREAK = "|"
 _MIN = "<min>"
 _SEC = "<sec>"
 _UNITS = {
@@ -55,7 +65,17 @@ _TENS = {
 
 _FILLERS = {"oh", "um", "uh", "uhh", "umm", "hmm", "okay", "ok", "hey", "coach", "please", "like"}
 
-_STOP = {"stop", "skip", "cancel", "end", "ready", "finish", "finished", "enough", "quit"}
+_STOP = {"stop", "skip", "cancel", "end", "ready", "enough", "quit"}
+_DONE = {"done", "finish", "finished", "complete", "completed"}
+_WORKOUT = {"workout", "session", "practice"}
+_SUMMARY = {"summary", "recap", "splits", "results"}
+_BY = ("by", "x", "times")
+_DIST_UNITS = {
+    "meters": 1, "meter": 1, "metres": 1, "metre": 1,
+    "km": 1000, "k": 1000, "kilometer": 1000, "kilometers": 1000,
+    "mile": 1609, "miles": 1609,
+}  # fmt: skip
+MAX_REPS = 50
 _START = {"start", "begin", "set", "restart", "reset", "starting", "new"}
 _ADD = {"add", "plus", "extend", "extra", "another", "more"}
 _REST = {"rest", "resting", "recovery", "recover", "break", "timer"}
@@ -78,11 +98,17 @@ def _normalize(text: str) -> list[str]:
     # "1:30" and "1.30" (two digits after the dot, < 60) are minutes:seconds.
     t = re.sub(r"\b(\d{1,2}):([0-5]\d)\b", _mmss, t)
     t = re.sub(r"\b(\d{1,2})\.([0-5]\d)\b", _mmss, t)
+    # Plans: "8x300" / "8 x 300" -> "8 by 300"; a unit right after "by N" is a distance, so
+    # "by 300m" means meters even though "2m" alone means minutes.
+    t = re.sub(r"\b(\d+)\s*[x\u00d7]\s*(\d)", r"\1 by \2", t)
+    t = re.sub(r"\b(by|x)\s+(\d+(?:\.\d+)?)\s*(m|meters?|metres?)\b", r"\1 \2 meters", t)
+    t = re.sub(r"\b(by|x)\s+(\d+(?:\.\d+)?)\s*(k|km)\b", r"\1 \2 km", t)
     # "90s" / "2m" / "3min" glued to the number.
     t = re.sub(r"\b(\d+(?:\.\d+)?)(s|sec|secs|m|min|mins)\b", r"\1 \2", t)
     t = t.replace("'", "")  # what's -> whats, i'm -> im
     t = re.sub(r"(?<!\d)\.|\.(?!\d)", " ", t)  # keep decimal points only
-    t = re.sub(r"[^a-z0-9. ]+", " ", t)  # hyphens, commas, ?! etc.
+    t = re.sub(r"[,;]", f" {_BREAK} ", t)  # a pause: stops "three hundred, ninety" merging
+    t = re.sub(r"[^a-z0-9.| ]+", " ", t)  # hyphens, ?! etc.
     return [w for w in t.split() if w not in _FILLERS]
 
 
@@ -122,7 +148,7 @@ def _merge_numbers(words: list[str]) -> list[Token]:
             value, i = _read_number_words(words, i)
             out.append(value)
             continue
-        else:
+        elif w != _BREAK:
             out.append(w)
         i += 1
     return out
@@ -252,27 +278,67 @@ def _is_status(words: set[str], seq: list[str]) -> bool:
     return bool(words & {"remaining", "status"}) or ("left" in words and "how" in words)
 
 
+def _find_plan(toks: list[Token]) -> tuple[int, int, int, int] | None:
+    """ "8 by 300 [meters]" -> (reps, distance_m, start, end). Distance needs a unit or >= 50."""
+    for k, t in enumerate(toks):
+        if t not in _BY or k == 0 or k + 1 >= len(toks):
+            continue
+        reps, dist = toks[k - 1], toks[k + 1]
+        if not isinstance(reps, int) or isinstance(reps, bool) or isinstance(dist, str):
+            continue
+        unit = toks[k + 2] if k + 2 < len(toks) else None
+        factor = _DIST_UNITS.get(unit, 0) if isinstance(unit, str) else 0
+        end = k + 3 if factor else k + 2
+        meters = round(dist * (factor or 1))
+        if 1 <= reps <= MAX_REPS and (factor or meters >= 50) and 50 <= meters <= 50_000:
+            return reps, meters, k - 1, end
+    return None
+
+
+def _strings(toks: list[Token], skip: tuple[int, int] = (0, 0)) -> list[str]:
+    return [
+        t
+        for k, t in enumerate(toks)
+        if isinstance(t, str) and t not in (_MIN, _SEC) and not skip[0] <= k < skip[1]
+    ]
+
+
 def parse(text: str) -> Intent:
     """Parse one transcript. Never raises; unrecognized input is ``UNKNOWN``."""
     words = _normalize(text)
     toks = _canonicalize(_merge_numbers(words))
-    found = _find_duration(toks)
-    seconds = found[0] if found else None
-    start, end = (found[1], found[2]) if found else (0, 0)
-    rest_words = [
-        t
-        for k, t in enumerate(toks)
-        if isinstance(t, str) and t not in (_MIN, _SEC) and not start <= k < end
-    ]
-    wset = set(rest_words)
 
-    def make(kind: IntentKind, secs: int | None = None) -> Intent:
+    def make(kind: IntentKind, secs: int | None = None, **slots: int) -> Intent:
         if secs is not None and not 0 < secs <= MAX_SECONDS:
-            return Intent(IntentKind.UNKNOWN, None, text)
-        return Intent(kind, secs, text)
+            return Intent(IntentKind.UNKNOWN, None, text=text)
+        return Intent(kind, secs, text=text, **slots)
 
     if not words:
         return make(IntentKind.UNKNOWN)
+
+    # A plan first: its numbers ("8 by 300") must not be read as durations.
+    if plan := _find_plan(toks):
+        reps, meters, a, b = plan
+        rest = toks[:a] + toks[b:]
+        found = _find_duration(rest)
+        return make(IntentKind.PLAN, found[0] if found else None, reps=reps, distance_m=meters)
+
+    found = _find_duration(toks)
+    seconds = found[0] if found else None
+    rest_words = _strings(toks, (found[1], found[2]) if found else (0, 0))
+    wset = set(rest_words)
+    joined = " ".join(rest_words)
+
+    if wset & _WORKOUT and wset & (_STOP | _DONE | {"over"}):
+        return make(IntentKind.END_WORKOUT)
+    if wset & _SUMMARY or "how did i do" in joined:
+        return make(IntentKind.SUMMARY)
+    if wset & {"rep", "reps"} and wset & {"what", "which", "how", "count", "number", "many"}:
+        return make(IntentKind.REP_STATUS)
+    if wset & _DONE:
+        return make(IntentKind.DONE)
+    if "go" in wset or (wset & _WORKOUT and wset & _START):
+        return make(IntentKind.GO)
     if wset & _STOP:
         return make(IntentKind.STOP)
     if _is_status(wset, rest_words):
