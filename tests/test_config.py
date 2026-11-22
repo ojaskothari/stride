@@ -63,6 +63,7 @@ def test_custom_cue_schedule() -> None:
         ({"cues": {"min_rest": {"two": 180}}}, "whole seconds"),
         ({"enhance": {"backend": "krisp"}}, "enhance.backend"),
         ({"tts": {"backend": "elevenlabs"}}, "tts.backend"),
+        ({"tts": {"backend": "pyttsx3"}}, "tts.backend"),  # removed: same startup cost as say
         ({"stt": {"model": ""}}, "stt.model"),
         ({"audio": {"sample_rate": 44100}}, "16000"),
         ({"audio": {"silence_end_ms": -1}}, "positive"),

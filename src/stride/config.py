@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Any
 
 ENHANCERS = ("none", "rnnoise", "deepfilternet")
-TTS_BACKENDS = ("say", "pyttsx3", "none")
+# Cues are pre-rendered clips played in-process; the backend only renders them.
+# "none" stays silent (tests, headless runs). See docs/decisions.md.
+TTS_BACKENDS = ("say", "none")
 
 
 class ConfigError(ValueError):
