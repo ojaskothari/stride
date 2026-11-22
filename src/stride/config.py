@@ -24,6 +24,7 @@ class ConfigError(ValueError):
 @dataclass(frozen=True)
 class RestConfig:
     default_seconds: int = 90
+    default_add_seconds: int = 30
 
 
 @dataclass(frozen=True)
@@ -151,8 +152,8 @@ def _coerce(value: Any, default: Any, where: str) -> Any:
 
 
 def _validate(cfg: Config) -> None:
-    if cfg.rest.default_seconds <= 0:
-        raise ConfigError("rest.default_seconds must be positive")
+    if cfg.rest.default_seconds <= 0 or cfg.rest.default_add_seconds <= 0:
+        raise ConfigError("rest.default_seconds and rest.default_add_seconds must be positive")
 
     marks = cfg.cues.marks
     if any(m <= 0 for m in marks):
