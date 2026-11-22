@@ -93,11 +93,12 @@ def test_tap_speak_reply_and_latency_log(log: SessionLog) -> None:
     assert rec["reply"] == "Resting 1 minute 30"
     assert rec["audio"] is None  # evaluation recording is off by default
     lat = rec["latency"]
-    assert lat["hangover_s"] == pytest.approx(0.6, abs=0.03)
+    wait = Config().audio.silence_end_ms / 1000
+    assert lat["hangover_s"] == pytest.approx(wait, abs=0.03)
     assert lat["stt_s"] == 0.3
     assert lat["reply_s"] == pytest.approx(0.12)  # 20 ms to start + 100 ms output latency
     # end of speech -> heard = hangover + stt + reply
-    assert lat["end_to_end_s"] == pytest.approx(0.6 + 0.3 + 0.12, abs=0.03)
+    assert lat["end_to_end_s"] == pytest.approx(wait + 0.3 + 0.12, abs=0.03)
     assert log.path.name == "20261121-073000-post_rep.jsonl"
 
 

@@ -96,7 +96,7 @@ class Segmenter:
     floor_db: float
     threshold_db: float = 10.0
     silence_end_s: float = 0.6
-    max_utterance_s: float = 4.0
+    max_utterance_s: float = 15.0
     start_timeout_s: float = 3.0
     min_speech_frames: int = 3  # 60 ms: a tap or click is one or two frames
     tail_s: float = 0.2  # silence kept after speech for the recognizer

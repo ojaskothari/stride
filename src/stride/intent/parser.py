@@ -76,6 +76,7 @@ _DIST_UNITS = {
     "mile": 1609, "miles": 1609,
 }  # fmt: skip
 MAX_REPS = 50
+_REP_QUESTION = {"what", "whats", "which", "how", "count", "number", "many"}
 _START = {"start", "begin", "set", "restart", "reset", "starting", "new"}
 _ADD = {"add", "plus", "extend", "extra", "another", "more"}
 _REST = {"rest", "resting", "recovery", "recover", "break", "timer"}
@@ -339,7 +340,7 @@ def parse(text: str) -> Intent:
         return make(IntentKind.END_WORKOUT)
     if wset & _SUMMARY or "how did i do" in joined:
         return make(IntentKind.SUMMARY)
-    if wset & {"rep", "reps"} and wset & {"what", "which", "how", "count", "number", "many"}:
+    if wset & {"rep", "reps"} and wset & _REP_QUESTION:
         return make(IntentKind.REP_STATUS)
     if wset & _DONE:
         return make(IntentKind.DONE)
