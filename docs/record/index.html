@@ -461,6 +461,10 @@ function render() {
 
 async function toggleRecord() {
   if (!recording) {
+    if (ctx && ctx.state !== "running") { try { await ctx.resume(); } catch (_) { /* reported below */ } }
+    if (!stream || !stream.active || stream.getAudioTracks()[0].readyState !== "live") {
+      try { await openMic($("mic").value || undefined); } catch (_) { /* reported below */ }
+    }
     chunks = []; recording = true; recStart = performance.now();
     $("rec").classList.add("on"); $("rec").textContent = "Stop";
     const tick = () => {
@@ -480,6 +484,11 @@ async function toggleRecord() {
   current = { samples, rate, q, blob: wav(samples, rate) };
   $("play").disabled = false;
   const m = $("clipmsg");
+  if (samples.length === 0) {
+    m.textContent = "Your mic didn't pick anything up. Tap record again, and keep this page open while you talk.";
+    m.className = "msg warn"; $("next").disabled = true; $("play").disabled = true;
+    return;
+  }
   if (q.problems.length) {
     const why = { "too short": "That got cut off.", "too loud (distorted)": "That was a bit too loud.",
       "too quiet or no speech heard": "I couldn't really hear that." }[q.problems[0]];
@@ -513,9 +522,18 @@ async function next() {
     browser_processing: (({ echoCancellation, noiseSuppression, autoGainControl }) =>
       ({ echoCancellation, noiseSuppression, autoGainControl }))(track.getSettings()),
   };
-  await put("clips", meta.name, { meta, wav: current.blob, uploaded: false });
-  idx += 1;
-  await put("state", stateKey(), { idx, order: order.map((x) => x.id) });
+  $("next").disabled = true;
+  try {
+    await put("clips", meta.name, { meta, wav: current.blob, uploaded: false });
+    idx += 1;
+    await put("state", stateKey(), { idx, order: order.map((x) => x.id) });
+  } catch (e) {
+    $("next").disabled = false;
+    $("clipmsg").textContent = `Couldn't save that one (${(e && (e.name || e.message)) || "unknown error"}). ` +
+      "If you're in a private/incognito tab, open the link in a normal tab.";
+    $("clipmsg").className = "msg warn";
+    return;
+  }
   uploadPending();
   render();
 }
@@ -695,7 +713,11 @@ async function begin() {
 $("backfromrep").onclick = () => { render.backFromRep = true; render(); };
 $("rec").onclick = toggleRecord;
 $("play").onclick = play;
-$("next").onclick = next;
+$("next").onclick = () => next().catch((e) => {
+  $("next").disabled = false;
+  $("clipmsg").textContent = `Something went wrong (${(e && (e.name || e.message)) || "unknown error"}). Screenshot this for Ojas.`;
+  $("clipmsg").className = "msg warn";
+});
 $("download").onclick = download;
 
 // ---- restart: delete this person's recordings (here and, if sent, in the Drive) -------------
