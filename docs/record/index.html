@@ -540,51 +540,73 @@ async function next() {
 
 async function finish() {
   show("done");
-  const n = (await allClips()).filter((c) => c.meta.speaker === code).length;
-  $("donemsg").textContent = `You recorded ${n} phrases.`;
   $("more").classList.toggle("hidden", order.length >= phrases.length);
   updateUploadStatus();
+  uploadPending();
 }
 
 // ---- upload (optional, background, retried) -------------------------------------------------
-let uploading = false, generation = 0;
+let uploadRun = null, uploadFailed = false, generation = 0;
 function b64(blob) {
   return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(blob); });
 }
-async function uploadPending() {
-  if (!UPLOAD_URL || uploading) return;
-  uploading = true;
+const pendingClips = async () =>
+  (await allClips()).filter((c) => !c.uploaded && c.meta.speaker === code && c.meta.session === sessionId);
+
+// One upload run at a time. It keeps going until nothing is left, so clips recorded while it was
+// busy are picked up too. A restart (generation change) stops it after the current clip.
+function uploadPending() {
+  if (!UPLOAD_URL || uploadRun) return uploadRun;
   const gen = generation;
-  try {
-    for (const c of await allClips()) {
-      if (gen !== generation) break;
-      if (c.uploaded || c.meta.speaker !== code) continue;
-      // text/plain avoids a CORS preflight, which Apps Script doesn't answer.
-      const r = await fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({
-        key: KEY, code, name: c.meta.name, meta: c.meta, wav: await b64(c.wav) }) });
-      const out = await r.json();
-      if (!out.ok) throw new Error(out.error || "upload refused");
-      c.uploaded = true; await put("clips", c.meta.name, c);
+  uploadRun = (async () => {
+    try {
+      for (;;) {
+        if (gen !== generation) return;
+        const [c] = await pendingClips();
+        if (!c) break;
+        // text/plain avoids a CORS preflight, which Apps Script doesn't answer.
+        const r = await fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({
+          key: KEY, code, name: c.meta.name, meta: c.meta, wav: await b64(c.wav) }) });
+        const out = await r.json();
+        if (!out.ok) throw new Error(out.error || "upload refused");
+        if (gen !== generation) return;  // restarted meanwhile: the restart deletes it from Drive
+        c.uploaded = true; await put("clips", c.meta.name, c);
+        uploadFailed = false;
+        updateUploadStatus();
+      }
+    } catch (e) {
+      uploadFailed = true;
+      setTimeout(() => uploadPending(), 15000);
+    } finally {
+      uploadRun = null;
       updateUploadStatus();
     }
-  } catch (e) {
-    $("uploadstatus").textContent = "Sending paused. It'll retry on its own, nothing is lost.";
-    setTimeout(() => { uploading = false; uploadPending(); }, 15000);
-    return;
-  }
-  uploading = false;
-  updateUploadStatus();
+  })();
+  return uploadRun;
 }
+
 async function updateUploadStatus() {
-  const mine = (await allClips()).filter((c) => c.meta.speaker === code);
-  const up = mine.filter((c) => c.uploaded).length;
-  const text = UPLOAD_URL ? `${up} of ${mine.length} sent` : "";
-  $("uploadstatus").textContent = text;
-  if (!$("done").classList.contains("hidden")) {
-    const all = UPLOAD_URL && up === mine.length;
-    $("donemsg").textContent = all ? `All ${up} recordings are sent. You can close this page.`
-      : `You recorded ${mine.length} phrases.` + (UPLOAD_URL ? ` ${up} sent so far.` : "");
-    $("downloadhint").textContent = all ? "You don't need to download anything." : "Then send me the file. Text, AirDrop or email works.";
+  const mine = (await allClips()).filter((c) => c.meta.speaker === code && c.meta.session === sessionId);
+  const sent = mine.filter((c) => c.uploaded).length, total = mine.length;
+  const allSent = UPLOAD_URL && total > 0 && sent === total;
+  $("uploadstatus").textContent = !UPLOAD_URL || !total ? ""
+    : uploadFailed ? `${sent} of ${total} sent. Having trouble sending, it'll keep retrying.`
+    : `${sent} of ${total} sent`;
+  if ($("done").classList.contains("hidden")) return;
+  // Uploads on: the download is only a fallback when sending keeps failing.
+  const showDownload = !UPLOAD_URL || uploadFailed;
+  $("download").parentElement.classList.toggle("hidden", !showDownload);
+  $("downloadhint").classList.toggle("hidden", !showDownload);
+  if (!UPLOAD_URL) {
+    $("donemsg").textContent = `You recorded ${total} phrases.`;
+    $("downloadhint").textContent = "Then send me the file. Text, AirDrop or email works.";
+  } else if (allSent) {
+    $("donemsg").textContent = `All ${total} recordings are sent. You can close this page.`;
+  } else if (uploadFailed) {
+    $("donemsg").textContent = `${sent} of ${total} sent. Having trouble sending the rest.`;
+    $("downloadhint").textContent = "Keep this page open and it'll keep trying. If it never finishes, download the file and send it to me.";
+  } else {
+    $("donemsg").textContent = `Sending your recordings (${sent} of ${total})… keep this page open for a few seconds.`;
   }
 }
 
@@ -724,16 +746,32 @@ $("download").onclick = download;
 document.querySelectorAll("[data-restart]").forEach((b) => { b.onclick = () => $("confirmrestart").classList.remove("hidden"); });
 $("restartcancel").onclick = () => $("confirmrestart").classList.add("hidden");
 $("restartyes").onclick = async () => {
-  generation += 1;
+  $("restartyes").disabled = true; $("restartcancel").disabled = true;
+  $("restartyes").textContent = "deleting…";
+  generation += 1;  // stops the upload loop after its current clip
   if (recording) { recording = false; chunks = []; }
+  if (uploadRun) { try { await uploadRun; } catch (_) { /* stopping anyway */ } }
+  let note = "";
+  if (UPLOAD_URL) {
+    // Delete from the Drive *after* the last in-flight upload landed, or that clip would survive.
+    // Files go to the Drive trash (recoverable for 30 days).
+    try {
+      const r = await fetch(UPLOAD_URL, { method: "POST",
+        body: JSON.stringify({ action: "reset", key: KEY, code, session: sessionId }) });
+      const out = await r.json();
+      if (!out.ok) throw new Error(out.error);
+      note = "Your recordings were deleted. You can start over.";
+    } catch (_) {
+      note = "Couldn't delete what was already sent. Tell Ojas and he'll remove it.";
+    }
+  }
   const mine = (await allClips()).filter((c) => c.meta.speaker === code && c.meta.session === sessionId);
   await dbOp("clips", "readwrite", (st) => { mine.forEach((c) => st.delete(c.meta.name)); });
   await dbOp("state", "readwrite", (st) => st.delete(stateKey()));
-  if (UPLOAD_URL) {
-    // Moves this person's files to the Drive trash (recoverable for 30 days).
-    fetch(UPLOAD_URL, { method: "POST", body: JSON.stringify({ action: "reset", key: KEY, code, session: sessionId }) })
-      .catch(() => {});
-  }
+  uploadFailed = false;
+  $("restartyes").disabled = false; $("restartcancel").disabled = false;
+  $("restartyes").textContent = "yes, restart";
+  $("setupmsg").textContent = note; $("setupmsg").className = "msg";
   order = []; idx = 0; current = null;
   $("consent").checked = false; refreshStart();
   $("uploadstatus").textContent = "";
