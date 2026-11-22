@@ -52,7 +52,7 @@ class AudioConfig:
     sample_rate: int = 16_000
     vad_db_above_floor: float = 10.0
     silence_end_ms: int = 600
-    max_utterance_s: float = 6.0
+    max_utterance_s: float = 4.0
 
 
 @dataclass(frozen=True)
