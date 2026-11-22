@@ -68,6 +68,7 @@ class EndReason(StrEnum):
     SILENCE = "silence"  # speech, then silence_end_ms of quiet
     MAX_LENGTH = "max_length"
     NO_SPEECH = "no_speech"  # nothing loud enough within start_timeout_s
+    TAP = "tap"  # the user tapped again to end the utterance
 
 
 @dataclass(frozen=True)
@@ -139,6 +140,12 @@ class Segmenter:
         if t_end - self._frame_start(self._start_idx) >= self.max_utterance_s:
             return self._finish(EndReason.MAX_LENGTH, t_end)
         return None
+
+    def finish(self, now: float) -> Utterance:
+        """End now (a second tap). Skips the silence wait: the fastest way to get a reply."""
+        if self._start_idx is None:
+            return self._finish(EndReason.NO_SPEECH, now)
+        return self._finish(EndReason.TAP, now)
 
     def _frame_start(self, i: int) -> float:
         return self._times[i] - FRAME_S
