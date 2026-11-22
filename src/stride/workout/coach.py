@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from stride.config import Config
 from stride.intent import Intent, IntentKind
@@ -18,6 +18,7 @@ class Speech:
     # the player can drop ones that arrive too late to be useful.
     due: float | None = None
     mark: int | None = None  # set for countdown cues
+    tag: int | None = field(default=None, compare=False)  # links a reply to its log record
 
     @property
     def text(self) -> str:
