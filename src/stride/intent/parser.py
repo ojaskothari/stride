@@ -321,7 +321,13 @@ def parse(text: str) -> Intent:
         reps, meters, a, b = plan
         rest = toks[:a] + toks[b:]
         found = _find_duration(rest)
-        return make(IntentKind.PLAN, found[0] if found else None, reps=reps, distance_m=meters)
+        rest_s = found[0] if found else None
+        if rest_s is None and meters % 50 and meters > 100 and set(_strings(rest)) & _REST:
+            # Whisper drops the pause: "three hundred, ninety rest" -> "390 rest". Rep distances
+            # are multiples of 50 m, so the last two digits are the rest ("3 rest" = 3 minutes).
+            meters, tail = meters - meters % 100, meters % 100
+            rest_s = tail * 60 if tail <= 10 else tail
+        return make(IntentKind.PLAN, rest_s, reps=reps, distance_m=meters)
 
     found = _find_duration(toks)
     seconds = found[0] if found else None

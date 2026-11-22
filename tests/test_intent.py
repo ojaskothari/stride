@@ -147,6 +147,12 @@ P = IntentKind.PLAN
         ("12 by 100", 12, 100, None),
         ("ten by one hundred", 10, 100, None),
         ("Coach, 8 times 300, a minute thirty rest.", 8, 300, 90),
+        # Whisper merges "three hundred, ninety rest" into one number (seen live).
+        ("8 by 390 rest.", 8, 300, 90),
+        ("4 by 1290 rest", 4, 1200, 90),
+        ("6 by 403 rest", 6, 400, 180),
+        ("8 by 330", 8, 330, None),  # no rest word: an odd distance is taken at face value
+        ("8 by 345 rest", 8, 300, 45),
     ],
 )
 def test_parse_plan(text: str, reps: int, meters: int, rest: int | None) -> None:
